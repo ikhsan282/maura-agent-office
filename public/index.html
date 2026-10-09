@@ -153,6 +153,60 @@ body {
   color: #fff;
 }
 
+.room-views {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  pointer-events: auto;
+  max-width: 90%;
+}
+
+.room-views h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  margin-right: 0.5rem;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+.room-btn {
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  font-family: inherit;
+}
+
+.room-btn:hover {
+  background: var(--border);
+  border-color: var(--text-dim);
+}
+
+.room-btn.active {
+  background: var(--accent-command);
+  border-color: var(--accent-command);
+  color: #fff;
+}
+
 .controls-help {
   position: fixed;
   bottom: 1rem;
@@ -776,6 +830,19 @@ footer {
   <button class="filter-btn" data-filter="recent">Recent</button>
 </div>
 
+<div class="room-views">
+  <h3>Ruangan</h3>
+  <button class="room-btn" data-room="overview">🏢 Overview</button>
+  <button class="room-btn" data-room="trans">🚐 Trans</button>
+  <button class="room-btn" data-room="printing">🖨️ Printing</button>
+  <button class="room-btn" data-room="command">⚡ Command</button>
+  <button class="room-btn" data-room="meeting">👥 Meeting</button>
+  <button class="room-btn" data-room="coffee">☕ Coffee</button>
+  <button class="room-btn" data-room="bedroom">🛏️ Bedroom</button>
+  <button class="room-btn" data-room="arcade">🎮 Arcade</button>
+  <button class="room-btn" data-room="pingpong">🏓 Ping-pong</button>
+</div>
+
 <div class="controls-help">
   <h4>Controls</h4>
   <ul>
@@ -1032,73 +1099,190 @@ function textLabel(text, color, pos) {
   scene.add(obj);
 }
 
-// Three purposeful zones: command, transportation, and printing.
+// Zona ruangan: trans (kiri), command (tengah), printing (kanan), shared spaces (belakang)
 box(scene, [0.16, 3.2, 19], 0x334155, [-14.1, 1.25, 0]);
 box(scene, [28, 3.2, 0.16], 0x334155, [0, 1.25, -10.1]);
 box(scene, [9.2, 0.06, 19.2], 0x102d4c, [-9.3, -0.06, 0]);
 box(scene, [9.2, 0.06, 19.2], 0x4a2020, [9.3, -0.06, 0]);
 box(scene, [8.8, 0.06, 7.2], 0x3b3219, [0, -0.02, -5.9]);
+
+// Bedroom room (kiri belakang)
+box(scene, [6, 0.06, 7], 0x2d3748, [-8, -0.02, 7]);
+box(scene, [6, 3.2, 0.16], 0x334155, [-8, 1.25, 10.6]);
+box(scene, [0.16, 3.2, 7], 0x334155, [-11.1, 1.25, 7]);
+
+// Meeting room (tengah belakang) - sudah ada furniture di bawah
+box(scene, [8, 0.06, 8], 0x1e293b, [0, -0.02, 8]);
+box(scene, [8, 3.2, 0.16], 0x334155, [0, 1.25, 12.1]);
+
 textLabel("MAURA TRANS", 0x1e5795, [-9.2, 3.2, -9.8]);
 textLabel("COMMAND", 0x806615, [0, 3.2, -9.8]);
 textLabel("MAURA PRINTING", 0xa3423f, [9.2, 3.2, -9.8]);
+textLabel("BEDROOM", 0x475569, [-8, 3.2, 10.4]);
+textLabel("MEETING", 0x475569, [0, 3.2, 11.9]);
 
 // Road markings and paper-print motifs distinguish the brand zones.
 for (let z = -7; z <= 7; z += 3.5) box(scene, [0.22, 0.03, 1.6], 0xf4c542, [-9.3, 0.02, z]);
 for (let z = -7; z <= 7; z += 3.5) box(scene, [2.4, 0.02, 1.5], z % 7 ? 0xf7efe4 : 0xd8c7ad, [9.3, 0.02, z]);
 
-// Shared activity zones make agent state visible, not just textual.
-const meetingTable = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.18, 24), mat(0x6b4f38));
-meetingTable.position.set(0, 1.05, 2.6);
+// Meeting room - realistic round table with smooth chairs
+const meetingTable = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 0.2, 32), mat(0x5a4a3a));
+meetingTable.position.set(0, 1.0, 8.5);
 meetingTable.castShadow = true;
 scene.add(meetingTable);
-box(scene, [0.35, 1.1, 0.35], 0x31251d, [0, 0.5, 2.6]);
-for (const [x, z] of [[-2.7, 2.6], [2.7, 2.6], [0, 5.3]]) {
-  box(scene, [1.05, 0.16, 1.05], 0x475569, [x, 0.55, z]);
-  box(scene, [1.05, 1.05, 0.14], 0x475569, [x, 1.05, z + (z > 3 ? 0.48 : 0)]);
+
+// Table leg - cylindrical
+const tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 1.0, 16), mat(0x2a1f15));
+tableLeg.position.set(0, 0.5, 8.5);
+tableLeg.castShadow = true;
+scene.add(tableLeg);
+
+// Meeting chairs - realistic with rounded seats
+for (let i = 0; i < 6; i++) {
+  const angle = (i / 6) * Math.PI * 2;
+  const cx = Math.cos(angle) * 2.8, cz = Math.sin(angle) * 2.8;
+  
+  // Chair seat - rounded
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.4, 0.15, 16), mat(0x475569));
+  seat.position.set(cx, 0.5, 8.5 + cz);
+  seat.castShadow = true;
+  scene.add(seat);
+  
+  // Chair back - curved
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.9, 0.12), mat(0x475569));
+  back.position.set(cx, 0.95, 8.5 + cz + Math.sin(angle) * 0.38);
+  back.rotation.y = angle;
+  back.castShadow = true;
+  scene.add(back);
 }
-textLabel("MEETING", 0x475569, [0, 3.0, 2.6]);
 
-// Coffee counter and rest bed/sofa.
-box(scene, [3.2, 1.15, 0.75], 0x4b3427, [-4.5, 0.55, 7.7]);
-box(scene, [0.32, 0.48, 0.32], 0xd1d5db, [-4.9, 1.38, 7.65]);
-box(scene, [0.5, 0.1, 0.5], 0x111827, [-4.9, 1.62, 7.65]);
-textLabel("COFFEE", 0x7c4a2d, [-4.5, 2.35, 7.7]);
-box(scene, [3.8, 0.45, 2.1], 0x31536d, [4.2, 0.25, 7.3]);
-box(scene, [3.8, 0.8, 0.35], 0x243b4c, [4.2, 0.75, 8.15]);
-box(scene, [0.9, 0.22, 1.65], 0xd7e3ea, [3.0, 0.57, 7.25]);
-textLabel("REST", 0x31536d, [4.2, 2.05, 7.9]);
+// Coffee counter - realistic with rounded elements
+const counter = new THREE.Mesh(new THREE.BoxGeometry(4, 1.2, 0.9), mat(0x3d2817));
+counter.position.set(-6, 0.6, 7);
+counter.castShadow = true;
+scene.add(counter);
 
-// Ping-pong table for idle agents
-const pingpongBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.12, 1.52), mat(0x1e3a5f));
-pingpongBase.position.set(-6, 0.75, -5.2);
+// Coffee machine - cylindrical body
+const machineBody = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.55, 16), mat(0xbfbfbf));
+machineBody.position.set(-6.8, 1.47, 6.95);
+machineBody.castShadow = true;
+scene.add(machineBody);
+
+// Machine top
+const machineTop = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.12, 16), mat(0x0f0f0f));
+machineTop.position.set(-6.8, 1.75, 6.95);
+machineTop.castShadow = true;
+scene.add(machineTop);
+
+// Coffee cup
+const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.45, 12), mat(0xd4a574));
+cup.position.set(-5.2, 1.42, 7);
+cup.castShadow = true;
+scene.add(cup);
+
+textLabel("COFFEE", 0x7c4a2d, [-6, 2.5, 7]);
+
+// Bedroom - 4 realistic beds with rounded mattresses
+const bedPositions = [[-9.5, 6], [-9.5, 8], [-6.5, 6], [-6.5, 8]];
+for (const [bx, bz] of bedPositions) {
+  // Bed frame
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.3, 2.4), mat(0x4a5568));
+  frame.position.set(bx, 0.25, bz);
+  frame.castShadow = true;
+  scene.add(frame);
+  
+  // Headboard
+  const headboard = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.2), mat(0x374151));
+  headboard.position.set(bx, 0.55, bz - 1.0);
+  headboard.castShadow = true;
+  scene.add(headboard);
+  
+  // Mattress - slightly rounded with soft edges
+  const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.08, 2.0, 2, 1, 2), mat(0xe8f0f8));
+  mattress.position.set(bx, 0.44, bz + 0.1);
+  mattress.castShadow = true;
+  scene.add(mattress);
+}
+textLabel("BEDROOM", 0x475569, [-8, 2.5, 7]);
+
+// Ping-pong table - realistic with rounded edges
+const pingpongBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.14, 1.8, 1, 1, 1), mat(0x1a4d7a));
+pingpongBase.position.set(-8, 0.72, -5.5);
 pingpongBase.castShadow = true;
 scene.add(pingpongBase);
-box(scene, [2.72, 0.03, 1.54], 0xffffff, [-6, 0.82, -5.2]);
-for (const lx of [-1.35, 1.35]) box(scene, [0.12, 0.75, 0.12], 0x334155, [-6 + lx, 0.38, -5.2 - 0.7]);
-for (const lx of [-1.35, 1.35]) box(scene, [0.12, 0.75, 0.12], 0x334155, [-6 + lx, 0.38, -5.2 + 0.7]);
-box(scene, [2.74, 0.15, 0.02], 0x1a1a1a, [-6, 0.88, -5.2]);
-textLabel("PING-PONG", 0x1e5795, [-6, 2.1, -5.2]);
 
-// Arcade cabinet for idle agents
-box(scene, [1.1, 1.85, 0.85], 0x1f2937, [6, 0.92, -5.5]);
-box(scene, [0.95, 1.15, 0.06], 0x111827, [6, 1.45, -5.1]);
-const arcadeScreen = box(scene, [0.82, 0.95, 0.03], 0x8b5cf6, [6, 1.45, -5.08]);
-arcadeScreen.material.emissive = new THREE.Color(0x8b5cf6).multiplyScalar(0.4);
-box(scene, [0.65, 0.08, 0.4], 0xef4444, [6, 0.55, -5.35]);
-box(scene, [0.18, 0.05, 0.18], 0xfbbf24, [5.75, 0.55, -5.25]);
-box(scene, [0.18, 0.05, 0.18], 0x3b82f6, [6.25, 0.55, -5.25]);
-textLabel("ARCADE", 0x8b5cf6, [6, 2.4, -5.5]);
+// Table surface with white lines
+const surface = new THREE.Mesh(new THREE.BoxGeometry(3.22, 0.04, 1.82), mat(0xffffff));
+surface.position.set(-8, 0.8, -5.5);
+surface.castShadow = true;
+scene.add(surface);
+
+// Cylindrical table legs
+for (const lx of [-1.6, 1.6]) {
+  for (const lz of [-0.83, 0.83]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.72, 12), mat(0x2c3e50));
+    leg.position.set(-8 + lx, 0.36, -5.5 + lz);
+    leg.castShadow = true;
+    scene.add(leg);
+  }
+}
+
+// Net
+const net = new THREE.Mesh(new THREE.BoxGeometry(3.24, 0.18, 0.03), mat(0x0a0a0a));
+net.position.set(-8, 0.86, -5.5);
+net.castShadow = true;
+scene.add(net);
+
+textLabel("PING-PONG", 0x1e5795, [-8, 2.3, -5.5]);
+
+// Arcade cabinet - realistic with rounded elements
+const arcadeBody = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.1, 1.0, 1, 1, 1), mat(0x1a1f2e));
+arcadeBody.position.set(8, 1.05, -5.5);
+arcadeBody.castShadow = true;
+scene.add(arcadeBody);
+
+const arcadeBezel = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.3, 0.08), mat(0x0d1117));
+arcadeBezel.position.set(8, 1.6, -5.05);
+arcadeBezel.castShadow = true;
+scene.add(arcadeBezel);
+
+const arcadeScreen = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.1, 0.04), mat(0x9333ea));
+arcadeScreen.position.set(8, 1.6, -5.02);
+arcadeScreen.material.emissive = new THREE.Color(0x9333ea).multiplyScalar(0.45);
+arcadeScreen.castShadow = true;
+scene.add(arcadeScreen);
+
+// Control panel
+const controlPanel = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.1, 0.5), mat(0xdc2626));
+controlPanel.position.set(8, 0.6, -5.4);
+controlPanel.castShadow = true;
+scene.add(controlPanel);
+
+// Buttons - cylindrical
+const btnYellow = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 12), mat(0xfbbf24));
+btnYellow.position.set(7.7, 0.6, -5.3);
+btnYellow.rotation.x = Math.PI / 2;
+btnYellow.castShadow = true;
+scene.add(btnYellow);
+
+const btnBlue = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 12), mat(0x3b82f6));
+btnBlue.position.set(8.3, 0.6, -5.3);
+btnBlue.rotation.x = Math.PI / 2;
+btnBlue.castShadow = true;
+scene.add(btnBlue);
+
+textLabel("ARCADE", 0x9333ea, [8, 2.7, -5.5]);
 
 const activitySpots = {
   desk: [],
-  meeting: [[-2.7, 1.25], [2.7, 1.25], [0, 4.0]],
-  coffee: [[-5.2, 5.8], [-3.8, 5.8]],
-  rest: [[3.1, 5.8], [4.8, 5.8]],
-  pingpong: [[-7.2, -5.2], [-4.8, -5.2]],
-  arcade: [[5.4, -5.5], [6.6, -5.5]],
-  stroll: [[-1.5, -0.5], [1.5, -0.5], [0, 6.2]]
+  meeting: [[2.2, 7.0], [-2.2, 7.0], [0, 10.5], [1.5, 9.5], [-1.5, 9.5]],
+  coffee: [[-6.8, 7.5], [-5.2, 7.5]],
+  bedroom: [[-9.5, 7], [-9.5, 9], [-6.5, 7], [-6.5, 9]],
+  pingpong: [[-9.2, -5.5], [-6.8, -5.5]],
+  arcade: [[7.4, -5.5], [8.6, -5.5]],
+  stroll: [[-1.5, -0.5], [1.5, -0.5], [0, 2.5]]
 };
-const activityName = { desk: "Bekerja di meja", meeting: "Diskusi di meeting", coffee: "Ngopi", rest: "Istirahat", stroll: "Berkeliling" };
+const activityName = { desk: "Bekerja di meja", meeting: "Diskusi di meeting", coffee: "Ngopi", bedroom: "Istirahat di bedroom", stroll: "Berkeliling" };
 
 function buildStation(agent) {
   // Dynamic positioning by room
@@ -1106,22 +1290,28 @@ function buildStation(agent) {
   let x, z, accent;
   
   if (room === "command") {
-    x = 0;
-    z = -5.8;
+    // Grid 3x3 layout untuk command center
+    const commandAgents = state.agents.filter(a => (a.room || "command") === "command");
+    const idx = commandAgents.findIndex(a => a.id === agent.id);
+    const col = idx % 3;
+    const row = Math.floor(idx / 3);
+    const spacing = 6;
+    x = (col - 1) * spacing;
+    z = (row - 1) * spacing;
     accent = 0xeab308;
   } else {
     // Group agents by room for spacing
     const roomAgents = state.agents.filter(a => (a.room || "command") === room);
     const idx = roomAgents.findIndex(a => a.id === agent.id);
     const count = roomAgents.length;
-    const spread = count > 1 ? 6 : 0;
+    const spacing = 2.2;
     
     if (room === "trans") {
-      x = -15 + (idx - (count - 1) / 2) * spread;
+      x = -10 + (idx - (count - 1) / 2) * spacing;
       z = 0;
       accent = agent.brand === "Maura Trans" ? 0x3b82f6 : 0x60a5fa;
     } else { // printing
-      x = 15 + (idx - (count - 1) / 2) * spread;
+      x = 11 + (idx - (count - 1) / 2) * spacing;
       z = 0;
       accent = agent.brand === "Maura Printing" ? 0xa3423f : 0xcc6c68;
     }
@@ -1131,16 +1321,56 @@ function buildStation(agent) {
   root.userData.agentId = agent.id;
   scene.add(root);
 
-  box(root, [4.6, 0.22, 2.2], 0x5b4636, [0, 1.25, 0], "desk");
-  box(root, [0.2, 1.25, 0.2], 0x2b211b, [-1.8, 0.6, -0.65]);
-  box(root, [0.2, 1.25, 0.2], 0x2b211b, [1.8, 0.6, -0.65]);
-  box(root, [2.25, 1.35, 0.12], 0x111827, [0, 2.15, -0.2]);
-  const screen = box(root, [1.9, 1.05, 0.04], accent, [0, 2.15, -0.12], "screen");
+  // Realistic desk with rounded edges
+  const deskTop = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.22, 2.2, 1, 1, 1), mat(0x5b4636));
+  deskTop.position.set(0, 1.25, 0);
+  deskTop.castShadow = true;
+  deskTop.userData.role = "desk";
+  root.add(deskTop);
+  
+  // Cylindrical desk legs
+  for (const [lx, lz] of [[-1.8, -0.65], [1.8, -0.65], [-1.8, 0.65], [1.8, 0.65]]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.25, 12), mat(0x2b211b));
+    leg.position.set(lx, 0.625, lz);
+    leg.castShadow = true;
+    root.add(leg);
+  }
+  
+  // Monitor bezel
+  const bezel = new THREE.Mesh(new THREE.BoxGeometry(2.25, 1.35, 0.12), mat(0x111827));
+  bezel.position.set(0, 2.15, -0.2);
+  bezel.castShadow = true;
+  root.add(bezel);
+  
+  // Monitor screen with glow
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.05, 0.04), mat(accent));
+  screen.position.set(0, 2.15, -0.12);
+  screen.userData.role = "screen";
   screen.material.emissive = new THREE.Color(accent).multiplyScalar(0.25);
-  box(root, [0.12, 0.65, 0.12], 0x475569, [0, 1.55, -0.25]);
-  box(root, [1.15, 0.1, 0.65], 0x1f2937, [0, 1.42, 0.55]);
-  box(root, [1.35, 0.16, 1.2], 0x334155, [0, 0.55, 1.7]);
-  box(root, [0.16, 1.15, 1.2], 0x334155, [0, 1.05, 2.2]);
+  root.add(screen);
+  
+  // Monitor stand
+  const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.65, 12), mat(0x475569));
+  stand.position.set(0, 1.55, -0.25);
+  stand.castShadow = true;
+  root.add(stand);
+  
+  // Keyboard
+  const keyboard = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.1, 0.65), mat(0x1f2937));
+  keyboard.position.set(0, 1.42, 0.55);
+  keyboard.castShadow = true;
+  root.add(keyboard);
+  
+  // Office chair - realistic with rounded seat and backrest
+  const chairSeat = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.58, 0.16, 16), mat(0x334155));
+  chairSeat.position.set(0, 0.55, 1.7);
+  chairSeat.castShadow = true;
+  root.add(chairSeat);
+  
+  const chairBack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.15, 0.16), mat(0x334155));
+  chairBack.position.set(0, 1.05, 2.2);
+  chairBack.castShadow = true;
+  root.add(chairBack);
 
   const actor = new THREE.Group();
   actor.userData.agentId = agent.id;
@@ -1159,35 +1389,112 @@ function buildStation(agent) {
   agentObjects.set(agent.id, { root, actor, avatar, screen, label, labelObj, agent, home: [x, z], offset: [0, 0], from: [0, 0], to: [0, 0], moveStart: 0, moveDur: 0, nextMove: 0, lastStatus: null, walking: false, sitting: false });
 }
 
-// Minecraft-style blocky avatar: every part is a cube, limbs pivot at joints so they can swing.
+// Realistic 3D avatar with smooth geometry
 function buildBlockyAvatar(shirt) {
   const group = new THREE.Group();
   group.position.set(0, 0, 1.15);
   const skin = 0xf0be82, pants = 0x1f2937;
-  const head = box(group, [0.6, 0.6, 0.6], skin, [0, 2.3, 0]);
-  for (const ex of [-0.14, 0.14]) box(group, [0.1, 0.1, 0.03], 0x111827, [ex, 2.36, -0.31]);
-  box(group, [0.2, 0.06, 0.03], 0x7c2d12, [0, 2.14, -0.31]);
-  box(group, [0.6, 0.12, 0.62], 0x3f2a1a, [0, 2.6, 0]); // hair cap
-  const torso = box(group, [0.6, 0.75, 0.32], shirt, [0, 1.67, 0]);
-  const limb = (x, y, color, length) => {
+  
+  // Head - sphere
+  const headGeom = new THREE.SphereGeometry(0.28, 16, 16);
+  const head = new THREE.Mesh(headGeom, mat(skin));
+  head.position.set(0, 2.3, 0);
+  head.castShadow = true;
+  group.add(head);
+  
+  // Eyes
+  for (const ex of [-0.12, 0.12]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), mat(0x111827));
+    eye.position.set(ex, 2.36, -0.26);
+    group.add(eye);
+  }
+  
+  // Mouth
+  const mouth = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.02, 4, 8), mat(0x7c2d12));
+  mouth.rotation.z = Math.PI / 2;
+  mouth.position.set(0, 2.16, -0.27);
+  group.add(mouth);
+  
+  // Hair - hemisphere
+  const hairGeom = new THREE.SphereGeometry(0.3, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+  const hair = new THREE.Mesh(hairGeom, mat(0x3f2a1a));
+  hair.position.set(0, 2.45, 0);
+  hair.castShadow = true;
+  group.add(hair);
+  
+  // Torso - capsule
+  const torsoGeom = new THREE.CapsuleGeometry(0.28, 0.55, 8, 16);
+  const torso = new THREE.Mesh(torsoGeom, mat(shirt));
+  torso.position.set(0, 1.72, 0);
+  torso.castShadow = true;
+  group.add(torso);
+  
+  // Limbs with capsule geometry
+  const limb = (x, y, color, length, radius = 0.1) => {
     const pivot = new THREE.Group();
     pivot.position.set(x, y, 0);
-    box(pivot, [0.24, length, 0.24], color, [0, -length / 2, 0]);
+    const limbGeom = new THREE.CapsuleGeometry(radius, length - radius * 2, 6, 12);
+    const mesh = new THREE.Mesh(limbGeom, mat(color));
+    mesh.position.y = -length / 2;
+    mesh.castShadow = true;
+    pivot.add(mesh);
     group.add(pivot);
     return pivot;
   };
-  const armL = limb(-0.43, 1.95, shirt, 0.7);
-  const armR = limb(0.43, 1.95, shirt, 0.7);
-  const legL = limb(-0.15, 1.3, pants, 0.7);
-  const legR = limb(0.15, 1.3, pants, 0.7);
+  
+  const armL = limb(-0.38, 1.92, shirt, 0.65, 0.08);
+  const armR = limb(0.38, 1.92, shirt, 0.65, 0.08);
+  const legL = limb(-0.13, 1.32, pants, 0.68, 0.11);
+  const legR = limb(0.13, 1.32, pants, 0.68, 0.11);
+  
   return { group, head, torso, armL, armR, legL, legR };
 }
 
 // Desk stays put; only the actor walks. Targets are world coordinates converted to offsets from the desk.
 function pickTarget(view) {
   const status = view.agent.status;
-  if (status === "working") return [view.home[0], view.home[1]];
-  const pool = status === "recent" ? activitySpots.coffee : [...activitySpots.stroll, ...activitySpots.rest, ...activitySpots.meeting, ...activitySpots.pingpong, ...activitySpots.arcade];
+  if (status === "working") {
+    view.currentActivity = "working";
+    return [view.home[0], view.home[1]];
+  }
+  
+  // Pick activity based on status with weighted randomness
+  let activityType, pool;
+  const rand = Math.random();
+  
+  if (status === "recent") {
+    // Recent: mostly coffee, sometimes bedroom
+    if (rand < 0.7) {
+      activityType = "coffee";
+      pool = activitySpots.coffee;
+    } else {
+      activityType = "bedroom";
+      pool = activitySpots.bedroom;
+    }
+  } else {
+    // Idle: varied activities
+    if (rand < 0.25) {
+      activityType = "meeting";
+      pool = activitySpots.meeting;
+    } else if (rand < 0.45) {
+      activityType = "coffee";
+      pool = activitySpots.coffee;
+    } else if (rand < 0.60) {
+      activityType = "bedroom";
+      pool = activitySpots.bedroom;
+    } else if (rand < 0.75) {
+      activityType = "pingpong";
+      pool = activitySpots.pingpong;
+    } else if (rand < 0.85) {
+      activityType = "arcade";
+      pool = activitySpots.arcade;
+    } else {
+      activityType = "stroll";
+      pool = activitySpots.stroll;
+    }
+  }
+  
+  view.currentActivity = activityType;
   const [wx, wz] = pool[Math.floor(Math.random() * pool.length)];
   return [wx, wz];
 }
@@ -1318,6 +1625,8 @@ function updateOffice(next) {
     const activity = view.label.querySelector(".agent-activity");
     const activityText = view.label.querySelector(".activity-text");
     const statusDot = view.label.querySelector(".agent-activity .status-dot");
+    
+    // Show activity based on status and current activity
     if (agent.chat) {
       activity.style.display = "flex";
       statusDot.className = "status-dot working";
@@ -1326,6 +1635,27 @@ function updateOffice(next) {
       activity.style.display = "flex";
       statusDot.className = `status-dot ${agent.status}`;
       activityText.textContent = `⚙️ ${statusName[agent.status] || agent.status}: ${agent.task.title}`;
+    } else if (view.currentActivity && agent.status !== "working") {
+      // Show idle activity
+      activity.style.display = "flex";
+      statusDot.className = `status-dot ${agent.status}`;
+      const activityEmoji = {
+        coffee: "☕",
+        bedroom: "🛏️",
+        meeting: "👥",
+        pingpong: "🏓",
+        arcade: "🎮",
+        stroll: "🚶"
+      };
+      const activityLabel = {
+        coffee: "Ngopi",
+        bedroom: "Istirahat di bedroom",
+        meeting: "Meeting",
+        pingpong: "Main ping pong",
+        arcade: "Main game",
+        stroll: "Jalan-jalan"
+      };
+      activityText.textContent = `${activityEmoji[view.currentActivity] || "🚶"} ${activityLabel[view.currentActivity] || "Berkeliling"}`;
     } else {
       activity.style.display = "none";
     }
@@ -1384,6 +1714,59 @@ document.querySelectorAll(".filter-btn").forEach(button => button.addEventListen
   for (const view of agentObjects.values()) view.root.visible = activeFilter === "all" || view.agent.status === activeFilter;
 }));
 
+// Room camera positions - adjusted untuk view lebih luas
+const roomViews = {
+  overview: { pos: [22, 20, 28], target: [0, 0, 0] },
+  trans: { pos: [-9.3, 14, 16], target: [-9.3, 0, 0] },
+  printing: { pos: [9.3, 14, 16], target: [9.3, 0, 0] },
+  command: { pos: [0, 14, -2], target: [0, 0, -5.9] },
+  meeting: { pos: [0, 12, 14], target: [0, 1, 2.6] },
+  coffee: { pos: [-6, 9, 14], target: [-6, 1, 7] },
+  bedroom: { pos: [6, 9, 14], target: [6, 0.5, 7] },
+  arcade: { pos: [8, 8, -2], target: [8, 1.5, -5.5] },
+  pingpong: { pos: [-8, 9, -1], target: [-8, 0.8, -5.2] }
+};
+
+let cameraAnimating = false;
+let animStart = null;
+let animFrom = { pos: [0,0,0], target: [0,0,0] };
+let animTo = { pos: [0,0,0], target: [0,0,0] };
+
+function smoothCamera(toPos, toTarget, duration = 1200) {
+  animFrom.pos = [camera.position.x, camera.position.y, camera.position.z];
+  animFrom.target = [controls.target.x, controls.target.y, controls.target.z];
+  animTo.pos = toPos;
+  animTo.target = toTarget;
+  animStart = performance.now();
+  cameraAnimating = true;
+}
+
+function updateCameraAnimation(now) {
+  if (!cameraAnimating) return;
+  const elapsed = now - animStart;
+  const t = Math.min(elapsed / 1200, 1);
+  const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+  
+  camera.position.x = animFrom.pos[0] + (animTo.pos[0] - animFrom.pos[0]) * ease;
+  camera.position.y = animFrom.pos[1] + (animTo.pos[1] - animFrom.pos[1]) * ease;
+  camera.position.z = animFrom.pos[2] + (animTo.pos[2] - animFrom.pos[2]) * ease;
+  
+  controls.target.x = animFrom.target[0] + (animTo.target[0] - animFrom.target[0]) * ease;
+  controls.target.y = animFrom.target[1] + (animTo.target[1] - animFrom.target[1]) * ease;
+  controls.target.z = animFrom.target[2] + (animTo.target[2] - animFrom.target[2]) * ease;
+  
+  if (t >= 1) cameraAnimating = false;
+}
+
+document.querySelectorAll(".room-btn").forEach(btn => btn.addEventListener("click", () => {
+  const room = btn.dataset.room;
+  const view = roomViews[room];
+  if (view) {
+    smoothCamera(view.pos, view.target);
+    document.querySelectorAll(".room-btn").forEach(b => b.classList.toggle("active", b === btn));
+  }
+}));
+
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 renderer.domElement.addEventListener("pointerdown", event => {
@@ -1416,6 +1799,7 @@ function animate() {
   window.__frames = (window.__frames || 0) + 1;
   requestAnimationFrame(animate);
   try {
+    updateCameraAnimation(performance.now());
     const t = clock.getElapsedTime();
     if (!reducedMotion) for (const view of agentObjects.values()) {
       moveAgent(view, t);
