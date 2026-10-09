@@ -9,6 +9,7 @@ import mimetypes
 import os
 import sqlite3
 import subprocess
+import threading
 import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -48,6 +49,12 @@ def _task_rows(db_path: Path) -> list[dict]:
         return []
 
 
+# Chat currently in flight (prompt) and the last completed chat per agent.
+ACTIVE_CHATS: dict[str, dict] = {}
+LAST_CHATS: dict[str, dict] = {}
+CHATS_LOCK = threading.Lock()
+
+
 def collect_state(db_paths: list[Path] | None = None, now: float | None = None) -> dict:
     now = now or time.time()
     tasks: dict[str, dict] = {}
@@ -78,7 +85,11 @@ def collect_state(db_paths: list[Path] | None = None, now: float | None = None) 
         )
         current = (running or recent or [None])[0]
         status = "working" if running else "recent" if recent else "idle"
-        agents.append({**definition, "status": status, "task": current, "assigned": len(assigned)})
+        with CHATS_LOCK:
+            chat = ACTIVE_CHATS.get(definition["id"])
+            last = LAST_CHATS.get(definition["id"])
+        agents.append({**definition, "status": status, "task": current, "assigned": len(assigned),
+                       "chat": chat, "lastChat": last})
 
     ready = sum(t.get("status") in {"ready", "todo"} for t in tasks.values())
     working = sum(a["status"] == "working" for a in agents)
@@ -152,15 +163,22 @@ def chat_agent(payload: dict) -> dict:
     if not message or len(message) > 4_000:
         raise ValueError("Pesan wajib diisi, maksimal 4.000 karakter")
     session = f"maura-office-{profile}"
-    # stdin avoids shell interpolation; the named session keeps chat context per agent.
-    command = [str(Path.home() / ".local/bin/hermes"), "-p", profile, "chat", "--continue", session, "--create-if-missing", "--query-file", "-", "--oneshot", "-Q", "--source", "tool"]
-    proc = subprocess.run(command, input=message, text=True, capture_output=True, timeout=300, cwd=ROOT)
-    if proc.returncode:
-        raise RuntimeError((proc.stderr or proc.stdout or "Chat gagal").strip())
-    reply = clean_reply(proc.stdout)
-    if not reply:
-        raise RuntimeError("Agen tidak mengirim balasan")
-    return {"ok": True, "reply": reply}
+    with CHATS_LOCK:
+        ACTIVE_CHATS[profile] = {"prompt": message[:60], "started_at": time.time()}
+    reply = ""
+    try:
+        command = [str(Path.home() / ".local/bin/hermes"), "-p", profile, "chat", "--continue", session, "--create-if-missing", "--query-file", "-", "--oneshot", "-Q", "--source", "tool"]
+        proc = subprocess.run(command, input=message, text=True, capture_output=True, timeout=300, cwd=ROOT)
+        if proc.returncode:
+            raise RuntimeError((proc.stderr or proc.stdout or "Chat gagal").strip())
+        reply = clean_reply(proc.stdout)
+        if not reply:
+            raise RuntimeError("Agen tidak mengirim balasan")
+        return {"ok": True, "reply": reply}
+    finally:
+        with CHATS_LOCK:
+            ACTIVE_CHATS.pop(profile, None)
+            LAST_CHATS[profile] = {"prompt": message[:60], "reply": reply[:60], "ended_at": time.time()}
 
 
 def make_handler(state_provider, static_dir: Path, task_creator=create_task, agent_chatter=chat_agent):
