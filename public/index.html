@@ -791,12 +791,151 @@ footer {
 .chat-input-group input {
   flex: 1;
 }
+
+/* Mission-control shell: a calm Ruang-inspired layer over the live scene. */
+:root {
+  --bg: #0d1720;
+  --surface: rgba(17, 29, 39, 0.92);
+  --surface-hi: rgba(29, 46, 58, 0.94);
+  --border: rgba(154, 184, 196, 0.22);
+  --text: #edf6f2;
+  --text-dim: #9cb2b4;
+  --accent-command: #e3b45c;
+  --accent-trans: #63b8c6;
+  --accent-print: #d58b78;
+}
+
+[data-theme="light"] {
+  --bg: #e9eee9;
+  --surface: rgba(250, 252, 248, 0.95);
+  --surface-hi: #eef3ee;
+  --border: #cad8d1;
+  --text: #1d302f;
+  --text-dim: #607570;
+}
+
+body { background: var(--bg); }
+button, input, select, textarea { accent-color: var(--accent-trans); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent-command);
+  outline-offset: 2px;
+}
+
+.mission-header {
+  position: fixed;
+  top: 0.85rem;
+  left: 1rem;
+  right: 1rem;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 3.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 14px 40px rgba(0,0,0,.18);
+  backdrop-filter: blur(16px);
+  pointer-events: auto;
+}
+.mission-menu, .header-action {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-hi);
+  color: var(--text);
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  cursor: pointer;
+}
+.mission-menu { font-size: 1.15rem; }
+.mission-brand { margin-right: auto; line-height: 1.05; }
+.mission-brand strong { display: block; font-size: .96rem; letter-spacing: .09em; text-transform: uppercase; }
+.mission-brand span { color: var(--text-dim); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+.mission-chips { display: flex; gap: .45rem; flex-wrap: wrap; justify-content: flex-end; }
+.mission-chip { border: 1px solid var(--border); border-radius: 999px; padding: .38rem .62rem; font-size: .72rem; color: var(--text-dim); white-space: nowrap; }
+.mission-chip b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+.nav-drawer {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: min(300px, 86vw);
+  z-index: 60;
+  padding: 5.6rem 1rem 1rem;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  box-shadow: 18px 0 50px rgba(0,0,0,.22);
+  transform: translateX(-105%);
+  transition: transform .25s ease;
+  pointer-events: auto;
+}
+.nav-drawer.open { transform: translateX(0); }
+.nav-drawer h2 { font-size: .72rem; color: var(--text-dim); letter-spacing: .12em; text-transform: uppercase; margin-bottom: .7rem; }
+.nav-link { display: flex; align-items: center; width: 100%; padding: .72rem .8rem; margin-bottom: .35rem; border: 0; border-radius: 9px; background: transparent; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+.nav-link:hover { background: var(--surface-hi); }
+.nav-scrim { display: none; position: fixed; inset: 0; z-index: 55; background: rgba(5, 12, 16, .45); }
+.nav-scrim.open { display: block; }
+
+.hud { display: none; }
+.filters { top: 5.2rem; left: 1rem; right: auto; border-radius: 12px; background: rgba(17,29,39,.78); backdrop-filter: blur(10px); }
+.room-views { top: auto; bottom: 1rem; left: 50%; max-width: min(72vw, 760px); border-radius: 12px; background: rgba(17,29,39,.78); backdrop-filter: blur(10px); }
+.mission-panel { position: fixed; top: 5.2rem; right: 1rem; z-index: 25; width: min(330px, calc(100vw - 2rem)); max-height: min(70vh, 620px); overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: 0 16px 44px rgba(0,0,0,.2); pointer-events: auto; }
+.panel-tabs { display: flex; gap: .3rem; padding: .55rem; border-bottom: 1px solid var(--border); }
+.panel-tab { flex: 1; border: 0; border-radius: 8px; padding: .55rem .4rem; background: transparent; color: var(--text-dim); font: 600 .74rem system-ui; cursor: pointer; }
+.panel-tab[aria-selected="true"] { background: var(--surface-hi); color: var(--text); box-shadow: inset 0 -2px var(--accent-command); }
+.panel-content { display: none; padding: .8rem; max-height: 52vh; overflow-y: auto; }
+.panel-content.active { display: block; }
+.panel-kicker { color: var(--text-dim); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; margin-bottom: .65rem; }
+.panel-list { display: grid; gap: .45rem; list-style: none; }
+.panel-card { padding: .65rem; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-hi); font-size: .8rem; }
+.panel-card strong { display: block; margin-bottom: .2rem; }
+.panel-card small { color: var(--text-dim); }
+.panel-empty { color: var(--text-dim); font-size: .8rem; padding: .5rem 0; }
+[data-theme="light"] .hud,
+[data-theme="light"] .filters,
+[data-theme="light"] .room-views { background: rgba(250,252,248,.84); }
+
+@media (max-width: 900px) {
+  .mission-chips { display: none; }
+  .mission-panel { top: 4.85rem; right: .75rem; max-height: 45vh; }
+  .hud { display: none; }
+  .filters { display: none; }
+  .room-views { left: .75rem; right: .75rem; bottom: .75rem; max-width: none; transform: none; overflow-x: auto; flex-wrap: nowrap; }
+  .room-views h3 { flex: 0 0 auto; }
+}
+@media (max-width: 560px) {
+  .mission-header { left: .6rem; right: .6rem; top: .6rem; }
+  .mission-brand strong { font-size: .82rem; }
+  .hud { min-width: 152px; }
+  .hud .metrics { gap: .4rem; }
+  .hud .metric-value { font-size: 1.05rem; }
+  .mission-panel { left: .6rem; right: .6rem; width: auto; }
+}
 </style>
 </head>
 <body>
 
-<button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌓</button>
-<button class="theme-toggle" id="auto-refresh-toggle" title="Auto refresh" style="bottom:5rem">🔄</button>
+<header class="mission-header" aria-label="Mission control">
+  <button class="mission-menu" id="nav-toggle" type="button" aria-label="Buka navigasi" aria-controls="nav-drawer" aria-expanded="false">☰</button>
+  <div class="mission-brand"><strong>Maura Mission Control</strong><span>Kantor agen langsung</span></div>
+  <div class="mission-chips" aria-label="Ringkasan langsung">
+    <span class="mission-chip">Kerja <b id="header-working">0</b></span>
+    <span class="mission-chip">Siap <b id="header-ready">0</b></span>
+    <span class="mission-chip">Selesai <b id="header-done">0</b></span>
+    <span class="mission-chip">RAM <b id="header-system">—</b></span>
+  </div>
+  <button class="header-action" id="theme-toggle" type="button" aria-label="Ganti tema" title="Ganti tema">◐</button>
+  <button class="header-action" id="auto-refresh-toggle" type="button" aria-label="Atur penyegaran otomatis" title="Penyegaran otomatis">↻</button>
+</header>
+
+<nav class="nav-drawer" id="nav-drawer" aria-label="Navigasi utama" aria-hidden="true">
+  <h2>Operasi</h2>
+  <button class="nav-link" type="button" data-action="tasks">▣ &nbsp; Semua tugas</button>
+  <button class="nav-link" type="button" data-action="create">＋ &nbsp; Buat tugas</button>
+  <button class="nav-link" type="button" data-action="chat">◌ &nbsp; Chat agen</button>
+  <button class="nav-link" type="button" data-action="panel">◎ &nbsp; Ringkasan kantor</button>
+</nav>
+<div class="nav-scrim" id="nav-scrim" aria-hidden="true"></div>
 
 <div id="container"></div>
 
@@ -833,14 +972,17 @@ footer {
 <div class="room-views">
   <h3>Ruangan</h3>
   <button class="room-btn" data-room="overview">🏢 Overview</button>
+  <button class="room-btn" data-room="floor1">1️⃣ Lantai 1</button>
   <button class="room-btn" data-room="trans">🚐 Trans</button>
   <button class="room-btn" data-room="printing">🖨️ Printing</button>
-  <button class="room-btn" data-room="command">⚡ Command</button>
-  <button class="room-btn" data-room="meeting">👥 Meeting</button>
-  <button class="room-btn" data-room="coffee">☕ Coffee</button>
+  <button class="room-btn" data-room="lounge">🛋️ Lounge</button>
+  <button class="room-btn" data-room="game">🎮 Game</button>
+  <button class="room-btn" data-room="pantry">☕ Pantry</button>
+  <button class="room-btn" data-room="floor2">2️⃣ Lantai 2</button>
   <button class="room-btn" data-room="bedroom">🛏️ Bedroom</button>
-  <button class="room-btn" data-room="arcade">🎮 Arcade</button>
-  <button class="room-btn" data-room="pingpong">🏓 Ping-pong</button>
+  <button class="room-btn" data-room="lesehan">🧺 Lesehan</button>
+  <button class="room-btn" data-room="bathroom">🚿 Bathroom</button>
+  <button class="room-btn" data-room="balcony">🌿 Balcony</button>
 </div>
 
 <div class="controls-help">
@@ -978,6 +1120,26 @@ footer {
   </div>
 </div>
 
+<aside class="mission-panel" id="mission-panel" aria-label="Ringkasan kantor">
+  <div class="panel-tabs" role="tablist" aria-label="Ringkasan">
+    <button class="panel-tab" id="tab-crew" type="button" role="tab" data-panel-tab="crew" aria-selected="true" aria-controls="panel-crew">Crew</button>
+    <button class="panel-tab" id="tab-stats" type="button" role="tab" data-panel-tab="stats" aria-selected="false" aria-controls="panel-stats">Stats</button>
+    <button class="panel-tab" id="tab-activity" type="button" role="tab" data-panel-tab="activity" aria-selected="false" aria-controls="panel-activity">Activity</button>
+  </div>
+  <div class="panel-content active" id="panel-crew" role="tabpanel" aria-labelledby="tab-crew">
+    <div class="panel-kicker">Crew · status langsung</div>
+    <ul class="panel-list" id="crew-list"><li class="panel-empty">Menunggu data kantor…</li></ul>
+  </div>
+  <div class="panel-content" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats">
+    <div class="panel-kicker">Stats · hari ini</div>
+    <ul class="panel-list" id="stats-list"><li class="panel-empty">Menunggu data kantor…</li></ul>
+  </div>
+  <div class="panel-content" id="panel-activity" role="tabpanel" aria-labelledby="tab-activity">
+    <div class="panel-kicker">Activity · tugas terkini</div>
+    <ul class="panel-list" id="activity-list"><li class="panel-empty">Belum ada aktivitas.</li></ul>
+  </div>
+</aside>
+
 <div class="fab-group">
   <button class="fab" id="fab-chat" title="Chat dengan agen">💬</button>
   <button class="fab" id="fab-create" title="Buat tugas baru">➕</button>
@@ -1004,6 +1166,13 @@ footer {
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+import {
+  ACTIVITY_SPOTS,
+  activityLabel,
+  chooseActivityTarget,
+  nextWanderAt,
+  routeFor
+} from "./idle-wandering.mjs";
 
 const container = document.getElementById("container");
 const loading = document.getElementById("loading");
@@ -1061,13 +1230,17 @@ addEventListener("keydown", e => {
   if (e.key === "r") controls.autoRotate = !controls.autoRotate;
 });
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0xb8a896, 3.2));
-const sun = new THREE.DirectionalLight(0xfff9ed, 2.8);
+const hemi = new THREE.HemisphereLight(0xffffff, 0x44505c, 1.1);
+const ambient = new THREE.AmbientLight(0x9db4d0, 0.35);
+const sun = new THREE.DirectionalLight(0xfff1ce, 2.4);
 sun.position.set(12, 24, 10);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
-Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24 });
-scene.add(sun);
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26 });
+scene.add(hemi, ambient, sun);
+const nightLights = [];
+const emissiveFixtures = [];
+const animatedProps = [];
 
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(60, 48),
@@ -1078,12 +1251,63 @@ floor.position.y = -0.35;
 floor.receiveShadow = true;
 scene.add(floor);
 
-function mat(color, roughness = 0.8) {
-  return new THREE.MeshStandardMaterial({ color, roughness });
+function mat(color, roughness = 0.8, options = {}) {
+  return new THREE.MeshStandardMaterial({ color, roughness, ...options });
+}
+const textureCache = new Map();
+function proceduralTexture(key, width, height, draw, repeat = null) {
+  if (textureCache.has(key)) return textureCache.get(key);
+  const canvas = document.createElement("canvas");
+  canvas.width = width; canvas.height = height;
+  draw(canvas.getContext("2d"));
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  if (repeat) { texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(...repeat); }
+  textureCache.set(key, texture);
+  return texture;
+}
+function woodTexture() {
+  return proceduralTexture("wood", 256, 256, ctx => {
+    const tones = ["#ad774b", "#bd8759", "#98633d", "#c18c60"];
+    for (let y = 0; y < 256; y += 32) {
+      for (let x = (y / 32 % 2) * -48; x < 256; x += 96) {
+        ctx.fillStyle = tones[(x / 48 + y / 32 + 20) % tones.length | 0]; ctx.fillRect(x, y, 94, 30);
+        ctx.strokeStyle = "#69412655"; ctx.beginPath(); ctx.moveTo(x + 5, y + 16); ctx.bezierCurveTo(x + 30, y + 10, x + 60, y + 23, x + 90, y + 15); ctx.stroke();
+      }
+    }
+  }, [7, 5]);
+}
+function tileTexture() {
+  return proceduralTexture("tile", 128, 128, ctx => {
+    ctx.fillStyle = "#e9e3d7"; ctx.fillRect(0, 0, 128, 128); ctx.fillStyle = "#cfc7ba";
+    for (let i = 0; i <= 128; i += 32) { ctx.fillRect(i - 1, 0, 2, 128); ctx.fillRect(0, i - 1, 128, 2); }
+  }, [5, 5]);
+}
+function asphaltTexture() {
+  return proceduralTexture("asphalt", 128, 128, ctx => {
+    ctx.fillStyle = "#3c4247"; ctx.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 700; i++) { const g = 48 + i % 28; ctx.fillStyle = `rgb(${g},${g},${g + 3})`; ctx.fillRect(i * 47 % 128, i * 83 % 128, 1, 1); }
+    ctx.fillStyle = "#e5d990"; ctx.fillRect(0, 61, 46, 5); ctx.fillRect(73, 61, 55, 5);
+  }, [6, 2]);
+}
+function texturedPlane(parent, size, texture, pos) {
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(...size), mat(0xffffff, 0.82, { map: texture }));
+  mesh.rotation.x = -Math.PI / 2; mesh.position.set(...pos); mesh.receiveShadow = true; parent.add(mesh); return mesh;
 }
 function box(parent, size, color, pos, name = "") {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), mat(color));
   mesh.position.set(...pos);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.name = name;
+  parent.add(mesh);
+  return mesh;
+}
+function cylinder(parent, radii, height, color, pos, rotation = [0, 0, 0], name = "") {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radii[0], radii[1], height, 16), mat(color));
+  mesh.position.set(...pos);
+  mesh.rotation.set(...rotation);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.name = name;
@@ -1099,8 +1323,84 @@ function textLabel(text, color, pos) {
   scene.add(obj);
 }
 
-// Zona ruangan: trans (kiri), command (tengah), printing (kanan), shared spaces (belakang)
-box(scene, [0.16, 3.2, 19], 0x334155, [-14.1, 1.25, 0]);
+// Two-storey Ruang-inspired architecture: ground-floor hot desks and shared spaces;
+// upper-floor dorm, lesehan, bathroom and balcony. All props stay primitive/procedural.
+function buildOfficeArchitecture() {
+  const floor1 = new THREE.Group(); floor1.name = "FLOOR 1"; scene.add(floor1);
+  const floor2 = new THREE.Group(); floor2.name = "FLOOR 2"; scene.add(floor2);
+  const wood = woodTexture(), tile = tileTexture();
+  texturedPlane(floor1, [28, 20], wood, [0, 0, 0]);
+  texturedPlane(floor2, [28, 20], wood, [0, 3.6, 0]);
+  box(floor2, [28, 0.22, 20], 0x8b8173, [0, 3.35, 0], "UPPER FLOOR SLAB");
+  // Ground floor brand wings, shell, glass lounge partition, game room and pantry.
+  box(floor1, [9.0, 0.08, 18.8], 0x173a58, [-9.3, 0.04, 0], "MAURA TRANS WORKSPACE");
+  box(floor1, [9.0, 0.08, 18.8], 0x542b2b, [9.3, 0.04, 0], "MAURA PRINTING WORKSPACE");
+  box(floor1, [28, 3.2, 0.18], 0xc8bba7, [0, 1.55, -9.8]);
+  box(floor1, [0.18, 3.2, 20], 0xc8bba7, [-14, 1.55, 0]);
+  box(floor1, [0.18, 3.2, 20], 0xc8bba7, [14, 1.55, 0]);
+  box(floor1, [0.06, 2.0, 5.4], 0xbfe4ea, [3.0, 1.7, -7.0], "GLASS PARTITION").material.transparent = true;
+  floor1.children.at(-1).material.opacity = 0.24;
+  box(floor1, [0.12, 1.1, 1.5], 0x8b6b4a, [9.5, 0.55, -3.5], "GAME ROOM DOOR");
+  box(floor1, [2.4, 1.3, 0.8], 0x5a4031, [4.6, 0.65, -1.2], "LOUNGE SOFA TV");
+  box(floor1, [1.8, 1.0, 0.12], 0x121820, [4.6, 1.65, -8.9], "TV");
+  box(floor1, [2.8, 1.0, 0.8], 0xf0eee7, [9.0, 0.5, 2.2], "PANTRY");
+  cylinder(floor1, [0.23, 0.2], 1.0, 0xe8ece8, [8.2, 0.5, 1.3], [0, 0, 0], "GALON DISPENSER");
+  // Hot desks deliberately have no name labels.
+  for (let i = 0; i < 6; i++) {
+    const x = -10 + (i % 3) * 3.2, z = -3.5 + Math.floor(i / 3) * 3.0;
+    box(floor1, [2.3, 0.16, 1.1], 0x8f6748, [x, 1.0, z], "HOT DESK");
+    cylinder(floor1, [0.06, 0.06], 1.0, 0x43362d, [x - 0.85, 0.5, z]);
+    cylinder(floor1, [0.06, 0.06], 1.0, 0x43362d, [x + 0.85, 0.5, z]);
+  }
+  // Meeting table + gorengan and game room props.
+  cylinder(floor1, [2.1, 2.1], 0.18, 0x6f4932, [0, 1.0, 5.0], [0, 0, 0], "MEETING TABLE");
+  cylinder(floor1, [0.22, 0.22], 0.04, 0xf5eee1, [0.3, 1.12, 5.0], [0, 0, 0], "GORengan meeting");
+  for (const [x, z] of [[-8, -5], [-5.5, -5]]) cylinder(floor1, [0.06, 0.06], 0.9, 0x334455, [x, 0.45, z]);
+  box(floor1, [3.2, 0.12, 1.8], 0x1b5b87, [-7, 0.75, -5], "GAME ROOM PINGPONG");
+  box(floor1, [1.2, 2.0, 0.8], 0x19243b, [8.5, 1.0, -5], "GAME ROOM ARCADE");
+  cylinder(floor1, [0.5, 0.5], 0.08, 0x6e442e, [10.8, 0.65, -5], [0, 0, 0], "MEJA KARAMBOL");
+  // Upper floor rooms: four beds, lesehan, bathroom, balcony and stairwell.
+  for (let i = 0; i < 4; i++) {
+    const x = -10 + (i % 2) * 3.0, z = -5.8 + Math.floor(i / 2) * 3.6;
+    box(floor2, [2.0, 0.3, 2.7], 0x6f4932, [x, 4.0, z], "BED");
+    box(floor2, [1.7, 0.12, 2.3], [0x4d83b8, 0xd66c5b, 0x4fa58c, 0xe3b45c][i], [x, 4.23, z + 0.1]);
+  }
+  box(floor2, [4.0, 0.08, 3.0], 0x92485a, [3.5, 3.72, -3.8], "LESEHAN");
+  box(floor2, [3.0, 1.5, 2.6], 0x6eafd0, [9.5, 4.35, -5.8], "BATHROOM");
+  box(floor2, [10.0, 0.1, 2.5], 0xc6b69d, [1.0, 3.55, 10.7], "BALCONY");
+  box(floor2, [3.2, 0.15, 1.0], 0x8a5c3d, [-1.0, 4.2, 5.6], "BALCONY SEAT");
+  for (let i = 0; i < 10; i++) cylinder(floor2, [0.03, 0.03], 3.6, 0x6c6257, [-12.5 + i * 2.7, 1.8, 9.6], [0, 0, 0], "STAIRS");
+  textLabel("FLOOR 1", 0xe3b45c, [0, 3.4, -9.4]);
+  textLabel("FLOOR 2", 0xe3b45c, [0, 6.3, -9.4]);
+  textLabel("MAURA TRANS", 0x63b8c6, [-9.3, 3.0, -8.8]);
+  textLabel("MAURA PRINTING", 0xd58b78, [9.3, 3.0, -8.8]);
+  textLabel("LOUNGE", 0x63b8c6, [4.6, 3.0, -1.2]);
+  textLabel("GAME ROOM", 0x9333ea, [8.5, 3.0, -5]);
+  textLabel("PANTRY", 0x8b6b4a, [9, 2.8, 2.2]);
+  textLabel("BEDROOM · 4 BEDS", 0x7c8fc4, [-8, 6.4, -2]);
+  textLabel("LESEHAN", 0xd66c5b, [3.5, 6.1, -3.8]);
+  textLabel("BATHROOM", 0x6eafd0, [9.5, 6.2, -5.8]);
+  textLabel("BALCONY", 0xc6b69d, [1, 6.2, 10.7]);
+  textLabel("STAIRS", 0x8b8173, [0, 2.8, 9.6]);
+  // Indonesian street scene: flag, bakso cart, kopi keliling motorcycle, street lamps.
+  cylinder(scene, [0.2, 0.2], 5.0, 0xbfc6c8, [-16, 2.5, 2]);
+  box(scene, [1.6, 0.7, 0.04], 0xce1126, [-15.2, 4.5, 2], "BENDERA MERAH PUTIH");
+  box(scene, [1.6, 0.7, 0.04], 0xffffff, [-15.2, 3.8, 2]);
+  box(scene, [1.8, 0.9, 0.9], 0xe9e4d8, [-16, 0.5, -1], "GEROBAK BAKSO");
+  cylinder(scene, [0.3, 0.3], 0.12, 0x24282c, [-16.6, 0.2, -1], [Math.PI / 2, 0, 0]);
+  cylinder(scene, [0.3, 0.3], 0.12, 0x24282c, [-15.4, 0.2, -1], [Math.PI / 2, 0, 0]);
+  cylinder(scene, [0.3, 0.3], 0.12, 0x2e8b72, [-16, 0.3, 4], [Math.PI / 2, 0, 0], "KOPI KELILING");
+  box(scene, [1.7, 0.1, 0.5], 0x3d7fd6, [-16, 0.9, 4], "KOPI MOTORCYCLE");
+  for (const x of [-12, 3, 13]) { cylinder(scene, [0.06, 0.06], 3.2, 0x2f3336, [x, 1.6, 11]); box(scene, [0.5, 0.12, 0.2], 0xffd98a, [x, 3.2, 11], "STREET LAMP"); }
+  for (const x of [-9, 4]) { box(scene, [1.0, 0.3, 0.3], 0xf6f7f5, [x, 2.5, -9.5], "AC INDOOR"); box(scene, [0.9, 0.6, 0.3], 0xe9ebe8, [x, 0.4, -10.3], "AC OUTDOOR"); }
+  for (let i = 0; i < 5; i++) { box(scene, [1.3, 0.06, 0.14], 0xd9dde0, [-8 + i * 4, 3.0, 0], "SUSPENDED LED"); }
+  // Night-only fixtures use one pooled point light to keep the scene cheap.
+  for (const p of [[-12, 3.2, 11], [3, 3.2, 11], [13, 3.2, 11], [4.6, 3.0, -1.2]]) {
+    const light = new THREE.PointLight(0xffc978, 0, 7, 2); light.position.set(...p); nightLights.push(light); scene.add(light);
+  }
+  return { floor1, floor2 };
+}
+const officeArchitecture = buildOfficeArchitecture();
 box(scene, [28, 3.2, 0.16], 0x334155, [0, 1.25, -10.1]);
 box(scene, [9.2, 0.06, 19.2], 0x102d4c, [-9.3, -0.06, 0]);
 box(scene, [9.2, 0.06, 19.2], 0x4a2020, [9.3, -0.06, 0]);
@@ -1124,6 +1424,9 @@ textLabel("MEETING", 0x475569, [0, 3.2, 11.9]);
 // Road markings and paper-print motifs distinguish the brand zones.
 for (let z = -7; z <= 7; z += 3.5) box(scene, [0.22, 0.03, 1.6], 0xf4c542, [-9.3, 0.02, z]);
 for (let z = -7; z <= 7; z += 3.5) box(scene, [2.4, 0.02, 1.5], z % 7 ? 0xf7efe4 : 0xd8c7ad, [9.3, 0.02, z]);
+// Street outside the compound uses a procedural asphalt texture with lane markings.
+const street = new THREE.Mesh(new THREE.PlaneGeometry(42, 7), mat(0xffffff, 0.94, { map: asphaltTexture() }));
+street.rotation.x = -Math.PI / 2; street.position.set(0, -0.06, 13.6); street.receiveShadow = true; scene.add(street);
 
 // Meeting room - realistic round table with smooth chairs
 const meetingTable = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 0.2, 32), mat(0x5a4a3a));
@@ -1273,17 +1576,6 @@ scene.add(btnBlue);
 
 textLabel("ARCADE", 0x9333ea, [8, 2.7, -5.5]);
 
-const activitySpots = {
-  desk: [],
-  meeting: [[2.2, 7.0], [-2.2, 7.0], [0, 10.5], [1.5, 9.5], [-1.5, 9.5]],
-  coffee: [[-6.8, 7.5], [-5.2, 7.5]],
-  bedroom: [[-9.5, 7], [-9.5, 9], [-6.5, 7], [-6.5, 9]],
-  pingpong: [[-9.2, -5.5], [-6.8, -5.5]],
-  arcade: [[7.4, -5.5], [8.6, -5.5]],
-  stroll: [[-1.5, -0.5], [1.5, -0.5], [0, 2.5]]
-};
-const activityName = { desk: "Bekerja di meja", meeting: "Diskusi di meeting", coffee: "Ngopi", bedroom: "Istirahat di bedroom", stroll: "Berkeliling" };
-
 function buildStation(agent) {
   // Dynamic positioning by room
   const room = agent.room || "command";
@@ -1386,7 +1678,7 @@ function buildStation(agent) {
   scene.add(labelObj);
 
   root.traverse(o => { if (o.isMesh) o.userData.agentId = agent.id; });
-  agentObjects.set(agent.id, { root, actor, avatar, screen, label, labelObj, agent, home: [x, z], offset: [0, 0], from: [0, 0], to: [0, 0], moveStart: 0, moveDur: 0, nextMove: 0, lastStatus: null, walking: false, sitting: false });
+  agentObjects.set(agent.id, { root, actor, avatar, screen, label, labelObj, agent, home: [x, z], offset: [0, 0], from: [0, 0], to: [0, 0], route: [], moveStart: 0, moveDur: 0, nextMove: 0, lastStatus: null, walking: false, sitting: false });
 }
 
 // Realistic 3D avatar with smooth geometry
@@ -1451,69 +1743,39 @@ function buildBlockyAvatar(shirt) {
 }
 
 // Desk stays put; only the actor walks. Targets are world coordinates converted to offsets from the desk.
-function pickTarget(view) {
+// Idle agents wander every ~32s to a varied spot; movement follows aisle waypoints so paths stay clear of furniture.
+function pickRoute(view) {
   const status = view.agent.status;
   if (status === "working") {
     view.currentActivity = "working";
-    return [view.home[0], view.home[1]];
+    view.route = [[view.home[0], view.home[1]]];
+    return;
   }
-  
-  // Pick activity based on status with weighted randomness
-  let activityType, pool;
-  const rand = Math.random();
-  
-  if (status === "recent") {
-    // Recent: mostly coffee, sometimes bedroom
-    if (rand < 0.7) {
-      activityType = "coffee";
-      pool = activitySpots.coffee;
-    } else {
-      activityType = "bedroom";
-      pool = activitySpots.bedroom;
-    }
-  } else {
-    // Idle: varied activities
-    if (rand < 0.25) {
-      activityType = "meeting";
-      pool = activitySpots.meeting;
-    } else if (rand < 0.45) {
-      activityType = "coffee";
-      pool = activitySpots.coffee;
-    } else if (rand < 0.60) {
-      activityType = "bedroom";
-      pool = activitySpots.bedroom;
-    } else if (rand < 0.75) {
-      activityType = "pingpong";
-      pool = activitySpots.pingpong;
-    } else if (rand < 0.85) {
-      activityType = "arcade";
-      pool = activitySpots.arcade;
-    } else {
-      activityType = "stroll";
-      pool = activitySpots.stroll;
-    }
-  }
-  
-  view.currentActivity = activityType;
-  const [wx, wz] = pool[Math.floor(Math.random() * pool.length)];
-  return [wx, wz];
+  const { activity, target } = chooseActivityTarget(status);
+  view.currentActivity = activity;
+  view.route = routeFor(activity, [view.home[0], view.home[1]], target || [view.home[0], view.home[1]]);
 }
 
 function moveAgent(view, time) {
   const status = view.agent.status;
   if (status !== view.lastStatus || time > view.nextMove) {
-    const [wx, wz] = pickTarget(view);
-    view.from = [...view.offset];
-    view.to = [wx - view.home[0], wz - view.home[1]];
+    pickRoute(view);
     view.moveStart = time;
     view.moveDur = reducedMotion ? 0 : 3 + Math.random() * 2;
-    view.nextMove = status === "working" ? Infinity : time + 12 + Math.random() * 10;
+    view.nextMove = nextWanderAt(time, status);
     view.lastStatus = status;
   }
+  // Smoothstep along the polyline of waypoints, converted to offsets from the desk.
   const k = view.moveDur ? Math.min(1, (time - view.moveStart) / view.moveDur) : 1;
   const e = k * k * (3 - 2 * k);
-  const dx = view.to[0] - view.from[0], dz = view.to[1] - view.from[1];
-  view.offset = [view.from[0] + dx * e, view.from[1] + dz * e];
+  const wps = view.route.length > 1 ? view.route : [view.route[0], view.route[0]];
+  const seg = Math.min(wps.length - 1, Math.max(0, Math.floor(e * (wps.length - 1))));
+  const local = e * (wps.length - 1) - seg;
+  const a = wps[seg], b = wps[seg + 1] || wps[seg];
+  const wx = a[0] + (b[0] - a[0]) * local;
+  const wz = a[1] + (b[1] - a[1]) * local;
+  view.offset = [wx - view.home[0], wz - view.home[1]];
+  const dx = b[0] - a[0], dz = b[1] - a[1];
   const atDesk = Math.hypot(view.offset[0], view.offset[1]) < 0.2;
   view.sitting = status === "working" && atDesk;
   view.actor.position.set(view.offset[0], view.sitting ? -0.6 : 0, view.offset[1] + (view.sitting ? 0.5 : 0));
@@ -1606,6 +1868,28 @@ if (autoRefreshEnabled) {
   autoRefreshInterval = setInterval(autoRefresh, 8000);
 }
 
+function renderMissionPanel(next) {
+  const crew = document.getElementById("crew-list");
+  const stats = document.getElementById("stats-list");
+  const activity = document.getElementById("activity-list");
+  crew.innerHTML = next.agents.map(agent => `
+    <li class="panel-card">
+      <strong><span class="status-dot ${escapeHtml(agent.status)}"></span> ${escapeHtml(agent.emoji)} ${escapeHtml(agent.name)}</strong>
+      <small>${escapeHtml(statusName[agent.status] || agent.status)} · ${escapeHtml(agent.role)}</small>
+    </li>`).join("") || '<li class="panel-empty">Belum ada agen.</li>';
+  stats.innerHTML = `
+    <li class="panel-card"><strong>${next.metrics.working}</strong><small>Sedang bekerja</small></li>
+    <li class="panel-card"><strong>${next.metrics.ready}</strong><small>Siap ditugaskan</small></li>
+    <li class="panel-card"><strong>${next.metrics.doneToday}</strong><small>Selesai hari ini</small></li>
+    <li class="panel-card"><strong>${next.metrics.memory}% RAM</strong><small>Load ${escapeHtml(next.metrics.load)}</small></li>`;
+  const active = next.agents.filter(agent => agent.chat || agent.task);
+  activity.innerHTML = active.map(agent => `
+    <li class="panel-card">
+      <strong>${escapeHtml(agent.emoji)} ${escapeHtml(agent.name)}</strong>
+      <small>${agent.chat ? `Chat: ${escapeHtml(agent.chat.prompt)}` : escapeHtml(agent.task.title)}</small>
+    </li>`).join("") || '<li class="panel-empty">Belum ada aktivitas aktif.</li>';
+}
+
 function updateOffice(next) {
   state = next;
   document.getElementById("metric-working").textContent = next.metrics.working;
@@ -1613,6 +1897,11 @@ function updateOffice(next) {
   document.getElementById("metric-done").textContent = next.metrics.doneToday;
   document.getElementById("metric-system").textContent = `${next.metrics.memory}%`;
   document.getElementById("metric-system").title = `RAM ${next.metrics.memory}% · load ${next.metrics.load}`;
+  document.getElementById("header-working").textContent = next.metrics.working;
+  document.getElementById("header-ready").textContent = next.metrics.ready;
+  document.getElementById("header-done").textContent = next.metrics.doneToday;
+  document.getElementById("header-system").textContent = `${next.metrics.memory}%`;
+  renderMissionPanel(next);
 
   for (const agent of next.agents) {
     if (!agentObjects.has(agent.id)) buildStation(agent);
@@ -1636,26 +1925,10 @@ function updateOffice(next) {
       statusDot.className = `status-dot ${agent.status}`;
       activityText.textContent = `⚙️ ${statusName[agent.status] || agent.status}: ${agent.task.title}`;
     } else if (view.currentActivity && agent.status !== "working") {
-      // Show idle activity
+      // Show idle activity from the shared activity table
       activity.style.display = "flex";
       statusDot.className = `status-dot ${agent.status}`;
-      const activityEmoji = {
-        coffee: "☕",
-        bedroom: "🛏️",
-        meeting: "👥",
-        pingpong: "🏓",
-        arcade: "🎮",
-        stroll: "🚶"
-      };
-      const activityLabel = {
-        coffee: "Ngopi",
-        bedroom: "Istirahat di bedroom",
-        meeting: "Meeting",
-        pingpong: "Main ping pong",
-        arcade: "Main game",
-        stroll: "Jalan-jalan"
-      };
-      activityText.textContent = `${activityEmoji[view.currentActivity] || "🚶"} ${activityLabel[view.currentActivity] || "Berkeliling"}`;
+      activityText.textContent = activityLabel(view.currentActivity);
     } else {
       activity.style.display = "none";
     }
@@ -1717,14 +1990,17 @@ document.querySelectorAll(".filter-btn").forEach(button => button.addEventListen
 // Room camera positions - adjusted untuk view lebih luas
 const roomViews = {
   overview: { pos: [22, 20, 28], target: [0, 0, 0] },
+  floor1: { pos: [22, 20, 28], target: [0, 0, 0] },
   trans: { pos: [-9.3, 14, 16], target: [-9.3, 0, 0] },
   printing: { pos: [9.3, 14, 16], target: [9.3, 0, 0] },
-  command: { pos: [0, 14, -2], target: [0, 0, -5.9] },
-  meeting: { pos: [0, 12, 14], target: [0, 1, 2.6] },
-  coffee: { pos: [-6, 9, 14], target: [-6, 1, 7] },
-  bedroom: { pos: [6, 9, 14], target: [6, 0.5, 7] },
-  arcade: { pos: [8, 8, -2], target: [8, 1.5, -5.5] },
-  pingpong: { pos: [-8, 9, -1], target: [-8, 0.8, -5.2] }
+  lounge: { pos: [0, 12, 14], target: [0, 1, 7] },
+  game: { pos: [8, 8, -2], target: [8, 1.5, -5.5] },
+  pantry: { pos: [-6, 9, 14], target: [-6, 1, 7] },
+  floor2: { pos: [20, 18, 30], target: [0, 4, 7] },
+  bedroom: { pos: [-8, 9, 14], target: [-8, 0.5, 7] },
+  lesehan: { pos: [0, 10, 16], target: [0, 1, 8] },
+  bathroom: { pos: [7, 9, 14], target: [7, 1, 8] },
+  balcony: { pos: [0, 10, 20], target: [0, 2, 11] }
 };
 
 let cameraAnimating = false;
@@ -1853,6 +2129,23 @@ const drawers = {
   chat: document.getElementById("chat-drawer"),
   stats: document.getElementById("stats-drawer")
 };
+const navToggle = document.getElementById("nav-toggle");
+const navDrawer = document.getElementById("nav-drawer");
+const navScrim = document.getElementById("nav-scrim");
+
+function setNavigation(open) {
+  navDrawer.classList.toggle("open", open);
+  navScrim.classList.toggle("open", open);
+  navDrawer.setAttribute("aria-hidden", String(!open));
+  navToggle.setAttribute("aria-expanded", String(open));
+}
+navToggle.addEventListener("click", () => setNavigation(!navDrawer.classList.contains("open")));
+navScrim.addEventListener("click", () => setNavigation(false));
+
+document.querySelectorAll(".panel-tab").forEach(tab => tab.addEventListener("click", () => {
+  document.querySelectorAll(".panel-tab").forEach(button => button.setAttribute("aria-selected", String(button === tab)));
+  document.querySelectorAll(".panel-content").forEach(panel => panel.classList.toggle("active", panel.id === `panel-${tab.dataset.panelTab}`));
+}));
 
 function openDrawer(name) {
   Object.values(drawers).forEach(d => d.classList.remove("open"));
@@ -1889,6 +2182,26 @@ document.getElementById("fab-stats").addEventListener("click", () => {
   openDrawer("stats");
   fetchStats();
 });
+
+// Hamburger navigation links reuse the existing drawer actions.
+document.querySelectorAll(".nav-link").forEach(link => link.addEventListener("click", () => {
+  const action = link.dataset.action;
+  setNavigation(false);
+  if (action === "tasks") { openDrawer("tasks"); fetchTasks(); }
+  else if (action === "create") {
+    openDrawer("create");
+    document.getElementById("create-task-form").reset();
+    document.getElementById("create-task-alert").innerHTML = "";
+  } else if (action === "chat") {
+    openDrawer("chat");
+    document.getElementById("chat-alert").innerHTML = "";
+    renderChatHistory();
+    chatInput.focus();
+  } else if (action === "panel") {
+    closeAllDrawers();
+    document.getElementById("mission-panel").scrollIntoView({ block: "nearest" });
+  }
+}));
 
 async function fetchStats() {
   const el = document.getElementById("stats-content");
@@ -2106,7 +2419,7 @@ document.getElementById("task-search").addEventListener("input", renderTasks);
 
 // Keyboard shortcuts: ESC close drawer, / focus task search
 addEventListener("keydown", event => {
-  if (event.key === "Escape") closeAllDrawers();
+  if (event.key === "Escape") { closeAllDrawers(); setNavigation(false); }
   if (event.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) {
     event.preventDefault();
     openDrawer("tasks");
