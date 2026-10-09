@@ -388,6 +388,269 @@ footer {
     display: none;
   }
 }
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  max-width: 90vw;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s;
+  pointer-events: auto;
+}
+
+.drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.drawer-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.drawer-close {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.drawer-close:hover {
+  background: var(--surface-hi);
+  color: var(--text);
+}
+
+.task-item {
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.875rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.task-item:hover {
+  border-color: var(--text-dim);
+}
+
+.task-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.task-item-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.task-item-status {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.task-item-status.running {
+  background: var(--status-working);
+  color: white;
+}
+
+.task-item-status.done {
+  background: var(--status-idle);
+  color: white;
+}
+
+.task-item-status.ready, .task-item-status.todo {
+  background: var(--accent-trans);
+  color: white;
+}
+
+.task-item-meta {
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+  display: flex;
+  gap: 0.75rem;
+}
+
+.fab-group {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-trans);
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+}
+
+.fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.625rem 0.75rem;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.btn {
+  background: var(--accent-trans);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.625rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn:hover {
+  filter: brightness(1.1);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--surface-hi);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.alert-error {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: #fca5a5;
+}
+
+.alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.chat-message {
+  padding: 0.75rem;
+  border-radius: 8px;
+  max-width: 90%;
+}
+
+.chat-message.user {
+  background: var(--accent-trans);
+  color: white;
+  align-self: flex-end;
+}
+
+.chat-message.agent {
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  align-self: flex-start;
+}
+
+.chat-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chat-input-group input {
+  flex: 1;
+}
 </style>
 </head>
 <body>
@@ -445,6 +708,79 @@ footer {
     <div id="dialog-task"></div>
   </div>
 </dialog>
+
+<div class="drawer" id="tasks-drawer">
+  <div class="drawer-header">
+    <h2>📋 Semua Tugas</h2>
+    <button class="drawer-close" aria-label="Close">&times;</button>
+  </div>
+  <div class="drawer-body" id="tasks-list">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div class="drawer" id="create-task-drawer">
+  <div class="drawer-header">
+    <h2>➕ Buat Tugas Baru</h2>
+    <button class="drawer-close" aria-label="Close">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div id="create-task-alert"></div>
+    <form id="create-task-form">
+      <div class="form-group">
+        <label for="task-title">Judul Tugas</label>
+        <input type="text" id="task-title" maxlength="160" required>
+      </div>
+      <div class="form-group">
+        <label for="task-assignee">Agen</label>
+        <select id="task-assignee" required>
+          <option value="">Pilih agen...</option>
+          <option value="maura-trans-internal">🚐 Trans Internal</option>
+          <option value="maura-printing-internal">🖨️ Printing Internal</option>
+          <option value="maura-trans-cs">💬 Trans CS</option>
+          <option value="maura-printing-cs">🎧 Printing CS</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="task-body">Detail Tugas</label>
+        <textarea id="task-body" rows="6" maxlength="10000"></textarea>
+      </div>
+      <button type="submit" class="btn" id="create-task-btn">Buat Tugas</button>
+    </form>
+  </div>
+</div>
+
+<div class="drawer" id="chat-drawer">
+  <div class="drawer-header">
+    <h2 id="chat-drawer-title">💬 Chat</h2>
+    <button class="drawer-close" aria-label="Close">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div id="chat-alert"></div>
+    <div class="form-group">
+      <label for="chat-agent-select">Agen</label>
+      <select id="chat-agent-select">
+        <option value="maura-trans-internal">🚐 Trans Internal</option>
+        <option value="maura-printing-internal">🖨️ Printing Internal</option>
+        <option value="maura-trans-cs">💬 Trans CS</option>
+        <option value="maura-printing-cs">🎧 Printing CS</option>
+      </select>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <form id="chat-form">
+      <div class="chat-input-group">
+        <input type="text" id="chat-input" placeholder="Ketik pesan..." maxlength="4000" required>
+        <button type="submit" class="btn" id="chat-send-btn">Kirim</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="fab-group">
+  <button class="fab" id="fab-chat" title="Chat dengan agen">💬</button>
+  <button class="fab" id="fab-create" title="Buat tugas baru">➕</button>
+  <button class="fab" id="fab-tasks" title="Lihat semua tugas">📋</button>
+</div>
 
 <div class="loading" id="loading">
   <div class="spinner"></div>
@@ -728,6 +1064,157 @@ function animate() {
 fetchState();
 setInterval(fetchState, 8000);
 animate();
+
+// Drawer management
+const drawers = {
+  tasks: document.getElementById("tasks-drawer"),
+  create: document.getElementById("create-task-drawer"),
+  chat: document.getElementById("chat-drawer")
+};
+
+function openDrawer(name) {
+  Object.values(drawers).forEach(d => d.classList.remove("open"));
+  if (drawers[name]) drawers[name].classList.add("open");
+}
+
+function closeAllDrawers() {
+  Object.values(drawers).forEach(d => d.classList.remove("open"));
+}
+
+document.querySelectorAll(".drawer-close").forEach(btn => {
+  btn.addEventListener("click", closeAllDrawers);
+});
+
+document.getElementById("fab-tasks").addEventListener("click", () => {
+  openDrawer("tasks");
+  fetchTasks();
+});
+
+document.getElementById("fab-create").addEventListener("click", () => {
+  openDrawer("create");
+  document.getElementById("create-task-form").reset();
+  document.getElementById("create-task-alert").innerHTML = "";
+});
+
+document.getElementById("fab-chat").addEventListener("click", () => {
+  openDrawer("chat");
+  document.getElementById("chat-messages").innerHTML = "";
+  document.getElementById("chat-alert").innerHTML = "";
+});
+
+// Fetch and render tasks
+async function fetchTasks() {
+  const list = document.getElementById("tasks-list");
+  list.innerHTML = '<div class="spinner"></div>';
+  try {
+    const response = await fetch("/api/tasks", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const tasks = data.tasks || [];
+    if (!tasks.length) {
+      list.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:2rem">Belum ada tugas</p>';
+      return;
+    }
+    list.innerHTML = tasks.map(t => {
+      const agent = AGENTS.find(a => a.id === (t.assignee || ""));
+      const agentName = agent ? `${agent.emoji} ${agent.name}` : t.assignee || "—";
+      return `<div class="task-item">
+        <div class="task-item-header">
+          <div class="task-item-title">${escapeHtml(t.title)}</div>
+          <div class="task-item-status ${t.status}">${t.status}</div>
+        </div>
+        <div class="task-item-meta">
+          <span>👤 ${escapeHtml(agentName)}</span>
+          <span>🆔 ${escapeHtml(t.id)}</span>
+        </div>
+      </div>`;
+    }).join("");
+  } catch (error) {
+    list.innerHTML = `<div class="alert alert-error">Gagal memuat: ${escapeHtml(String(error.message))}</div>`;
+  }
+}
+
+// Create task
+const createTaskForm = document.getElementById("create-task-form");
+const createTaskBtn = document.getElementById("create-task-btn");
+const createTaskAlert = document.getElementById("create-task-alert");
+
+createTaskForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const title = document.getElementById("task-title").value.trim();
+  const body = document.getElementById("task-body").value.trim();
+  const assignee = document.getElementById("task-assignee").value;
+  if (!title || !assignee) return;
+  createTaskBtn.disabled = true;
+  createTaskBtn.textContent = "Membuat...";
+  createTaskAlert.innerHTML = "";
+  try {
+    const response = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, body, assignee })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Gagal membuat tugas");
+    createTaskAlert.innerHTML = '<div class="alert alert-success">✅ Tugas berhasil dibuat</div>';
+    createTaskForm.reset();
+    setTimeout(() => {
+      closeAllDrawers();
+      fetchState();
+    }, 1500);
+  } catch (error) {
+    createTaskAlert.innerHTML = `<div class="alert alert-error">${escapeHtml(String(error.message))}</div>`;
+  } finally {
+    createTaskBtn.disabled = false;
+    createTaskBtn.textContent = "Buat Tugas";
+  }
+});
+
+// Chat
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
+const chatSendBtn = document.getElementById("chat-send-btn");
+const chatMessages = document.getElementById("chat-messages");
+const chatAlert = document.getElementById("chat-alert");
+const chatAgentSelect = document.getElementById("chat-agent-select");
+
+chatForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const message = chatInput.value.trim();
+  const agent = chatAgentSelect.value;
+  if (!message) return;
+  chatSendBtn.disabled = true;
+  chatSendBtn.textContent = "...";
+  chatAlert.innerHTML = "";
+  chatMessages.innerHTML += `<div class="chat-message user">${escapeHtml(message)}</div>`;
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  chatInput.value = "";
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, agent })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Chat gagal");
+    chatMessages.innerHTML += `<div class="chat-message agent">${escapeHtml(result.reply || "Tidak ada balasan")}</div>`;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  } catch (error) {
+    chatAlert.innerHTML = `<div class="alert alert-error">${escapeHtml(String(error.message))}</div>`;
+  } finally {
+    chatSendBtn.disabled = false;
+    chatSendBtn.textContent = "Kirim";
+  }
+});
+
+const AGENTS = [
+  {"id": "default", "name": "Bos", "emoji": "👑"},
+  {"id": "maura-trans-internal", "name": "Trans Internal", "emoji": "🚐"},
+  {"id": "maura-trans-cs", "name": "Trans CS", "emoji": "💬"},
+  {"id": "maura-printing-internal", "name": "Printing Internal", "emoji": "🖨️"},
+  {"id": "maura-printing-cs", "name": "Printing CS", "emoji": "🎧"}
+];
+
 </script>
 </body>
 </html>
