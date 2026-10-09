@@ -938,7 +938,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 
-const BASE = location.pathname.startsWith("/office") ? "/office" : "";
 const container = document.getElementById("container");
 const loading = document.getElementById("loading");
 const dialog = document.getElementById("agent-dialog");
@@ -1101,16 +1100,16 @@ const activitySpots = {
 };
 const activityName = { desk: "Bekerja di meja", meeting: "Diskusi di meeting", coffee: "Ngopi", rest: "Istirahat", stroll: "Berkeliling" };
 
+const stationLayout = {
+  "default": [0, -5.8, 0xeab308],
+  "maura-trans-internal": [-9.5, -3, 0x3b82f6],
+  "maura-trans-cs": [-9.5, 4.5, 0x60a5fa],
+  "maura-printing-internal": [9.5, -3, 0xa3423f],
+  "maura-printing-cs": [9.5, 4.5, 0xcc6c68]
+};
+
 function buildStation(agent) {
-  // Dynamic positioning by room
-  const room = agent.room || "command";
-  const roomX = room === "trans" ? -15 : room === "printing" ? 15 : 0;
-  const roomAgents = (AGENTS && AGENTS.length > 0) ? AGENTS.filter(a => (a.room || "command") === room) : [agent];
-  const idx = roomAgents.indexOf(agent);
-  const spread = roomAgents.length > 1 ? 7.5 : 0;
-  const x = roomX + (idx - (roomAgents.length - 1) / 2) * spread;
-  const z = room === "command" ? -5.8 : 0;
-  const accent = agent.brand === "Maura Trans" ? 0x3b82f6 : agent.brand === "Maura Printing" ? 0xa3423f : 0xeab308;
+  const [x, z, accent] = stationLayout[agent.id] || [0, 5, 0x64748b];
   const root = new THREE.Group();
   root.position.set(x, 0, z);
   root.userData.agentId = agent.id;
@@ -1253,7 +1252,7 @@ async function checkTaskChanges(newState) {
 
 async function autoRefresh() {
   try {
-    const res = await fetch(`${BASE}/api/state`, { cache: "no-store" });
+    const res = await fetch("/api/state", { cache: "no-store" });
     if (!res.ok) return;
     const data = await res.json();
     updateOffice(data);
@@ -1285,10 +1284,7 @@ if (autoRefreshEnabled) {
 }
 
 function updateOffice(next) {
-  if (!next || !next.agents) return;
   state = next;
-  // AGENTS already set by fetchState before this call
-  
   document.getElementById("metric-working").textContent = next.metrics.working;
   document.getElementById("metric-ready").textContent = next.metrics.ready;
   document.getElementById("metric-done").textContent = next.metrics.doneToday;
@@ -1334,11 +1330,9 @@ function showError(message) {
 
 async function fetchState() {
   try {
-    const response = await fetch(`${BASE}/api/state`, { cache: "no-store" });
+    const response = await fetch("/api/state", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    AGENTS = data.agents;  // Populate BEFORE updateOffice
-    updateOffice(data);
+    updateOffice(await response.json());
   } catch (error) {
     window.__lastError = String(error?.stack || error);
     if (!state) showError("Data agen belum dapat dibaca. Pastikan server aktif.");
@@ -1500,7 +1494,7 @@ async function fetchStats() {
   const el = document.getElementById("stats-content");
   el.innerHTML = '<div class="spinner"></div>';
   try {
-    const response = await fetch(`${BASE}/api/state`, { cache: "no-store" });
+    const response = await fetch("/api/state", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     el.innerHTML = `
@@ -1596,7 +1590,7 @@ async function fetchTasks() {
   const list = document.getElementById("tasks-list");
   list.innerHTML = '<div class="spinner"></div>';
   try {
-    const response = await fetch(`${BASE}/api/tasks`, { cache: "no-store" });
+    const response = await fetch("/api/tasks", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     allTasks = data.tasks || [];
@@ -1736,7 +1730,7 @@ createTaskForm.addEventListener("submit", async (event) => {
   createTaskBtn.textContent = "Membuat...";
   createTaskAlert.innerHTML = "";
   try {
-    const response = await fetch(`${BASE}/api/tasks`, {
+    const response = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, body, assignee })
@@ -1813,7 +1807,7 @@ chatForm.addEventListener("submit", async (event) => {
   chatAgentSelect.disabled = true;
   chatAlert.innerHTML = "";
   try {
-    const response = await fetch(`${BASE}/api/chat`, {
+    const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, agent })
@@ -1834,8 +1828,13 @@ chatForm.addEventListener("submit", async (event) => {
   }
 });
 
-let AGENTS = [];  // Populated from API
-let allTasks = [];
+const AGENTS = [
+  {"id": "default", "name": "Bos", "emoji": "👑"},
+  {"id": "maura-trans-internal", "name": "Trans Internal", "emoji": "🚐"},
+  {"id": "maura-trans-cs", "name": "Trans CS", "emoji": "💬"},
+  {"id": "maura-printing-internal", "name": "Printing Internal", "emoji": "🖨️"},
+  {"id": "maura-printing-cs", "name": "Printing CS", "emoji": "🎧"}
+];
 
 </script>
 </body>
