@@ -196,7 +196,7 @@ def make_handler(state_provider, static_dir: Path, task_creator=create_task, age
             self.wfile.write(body)
 
         def do_GET(self):
-            path = urlparse(self.path).path
+            path = urlparse(self.path).path.removeprefix("/office")
             if path in {"/api/state", "/api/tasks", "/health"}:
                 if path == "/health":
                     payload = {"ok": True}
@@ -211,7 +211,7 @@ def make_handler(state_provider, static_dir: Path, task_creator=create_task, age
             return super().do_GET()
 
         def do_POST(self):
-            path = urlparse(self.path).path
+            path = urlparse(self.path).path.removeprefix("/office")
             if path not in {"/api/tasks", "/api/chat"}:
                 self._json(404, {"ok": False, "error": "Not found"})
                 return

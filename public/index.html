@@ -938,6 +938,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 
+const BASE = location.pathname.startsWith("/office") ? "/office" : "";
 const container = document.getElementById("container");
 const loading = document.getElementById("loading");
 const dialog = document.getElementById("agent-dialog");
@@ -1252,7 +1253,7 @@ async function checkTaskChanges(newState) {
 
 async function autoRefresh() {
   try {
-    const res = await fetch("/api/state", { cache: "no-store" });
+    const res = await fetch(`${BASE}/api/state`, { cache: "no-store" });
     if (!res.ok) return;
     const data = await res.json();
     updateOffice(data);
@@ -1330,7 +1331,7 @@ function showError(message) {
 
 async function fetchState() {
   try {
-    const response = await fetch("/api/state", { cache: "no-store" });
+    const response = await fetch(`${BASE}/api/state`, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     updateOffice(await response.json());
   } catch (error) {
@@ -1494,7 +1495,7 @@ async function fetchStats() {
   const el = document.getElementById("stats-content");
   el.innerHTML = '<div class="spinner"></div>';
   try {
-    const response = await fetch("/api/state", { cache: "no-store" });
+    const response = await fetch(`${BASE}/api/state`, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     el.innerHTML = `
@@ -1590,7 +1591,7 @@ async function fetchTasks() {
   const list = document.getElementById("tasks-list");
   list.innerHTML = '<div class="spinner"></div>';
   try {
-    const response = await fetch("/api/tasks", { cache: "no-store" });
+    const response = await fetch(`${BASE}/api/tasks`, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     allTasks = data.tasks || [];
@@ -1730,7 +1731,7 @@ createTaskForm.addEventListener("submit", async (event) => {
   createTaskBtn.textContent = "Membuat...";
   createTaskAlert.innerHTML = "";
   try {
-    const response = await fetch("/api/tasks", {
+    const response = await fetch(`${BASE}/api/tasks`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, body, assignee })
@@ -1807,7 +1808,7 @@ chatForm.addEventListener("submit", async (event) => {
   chatAgentSelect.disabled = true;
   chatAlert.innerHTML = "";
   try {
-    const response = await fetch("/api/chat", {
+    const response = await fetch(`${BASE}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, agent })
