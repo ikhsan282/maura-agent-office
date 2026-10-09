@@ -1100,16 +1100,32 @@ const activitySpots = {
 };
 const activityName = { desk: "Bekerja di meja", meeting: "Diskusi di meeting", coffee: "Ngopi", rest: "Istirahat", stroll: "Berkeliling" };
 
-const stationLayout = {
-  "default": [0, -5.8, 0xeab308],
-  "maura-trans-internal": [-9.5, -3, 0x3b82f6],
-  "maura-trans-cs": [-9.5, 4.5, 0x60a5fa],
-  "maura-printing-internal": [9.5, -3, 0xa3423f],
-  "maura-printing-cs": [9.5, 4.5, 0xcc6c68]
-};
-
 function buildStation(agent) {
-  const [x, z, accent] = stationLayout[agent.id] || [0, 5, 0x64748b];
+  // Dynamic positioning by room
+  const room = agent.room || "command";
+  let x, z, accent;
+  
+  if (room === "command") {
+    x = 0;
+    z = -5.8;
+    accent = 0xeab308;
+  } else {
+    // Group agents by room for spacing
+    const roomAgents = state.agents.filter(a => (a.room || "command") === room);
+    const idx = roomAgents.findIndex(a => a.id === agent.id);
+    const count = roomAgents.length;
+    const spread = count > 1 ? 6 : 0;
+    
+    if (room === "trans") {
+      x = -15 + (idx - (count - 1) / 2) * spread;
+      z = 0;
+      accent = agent.brand === "Maura Trans" ? 0x3b82f6 : 0x60a5fa;
+    } else { // printing
+      x = 15 + (idx - (count - 1) / 2) * spread;
+      z = 0;
+      accent = agent.brand === "Maura Printing" ? 0xa3423f : 0xcc6c68;
+    }
+  }
   const root = new THREE.Group();
   root.position.set(x, 0, z);
   root.userData.agentId = agent.id;
