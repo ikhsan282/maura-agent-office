@@ -1408,6 +1408,12 @@ async function fetchTasks() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     allTasks = data.tasks || [];
+    const assignees = [...new Set(allTasks.map(t => t.assignee).filter(Boolean))];
+    const sel = document.getElementById("task-assignee-filter");
+    sel.innerHTML = '<option value="">Semua Agen</option>' + assignees.map(a => {
+      const ag = AGENTS.find(x => x.id === a);
+      return `<option value="${escapeHtml(a)}">${escapeHtml(ag ? `${ag.emoji} ${ag.name}` : a)}</option>`;
+    }).join("");
     renderTasks();
   } catch (error) {
     list.innerHTML = `<div class="alert alert-error">Gagal memuat: ${escapeHtml(String(error.message))}</div>`;
@@ -1478,6 +1484,7 @@ function timeAgo(unix) {
 }
 
 document.getElementById("task-status-filter").addEventListener("change", renderTasks);
+document.getElementById("task-assignee-filter").addEventListener("change", renderTasks);
 
 // Create task
 const createTaskForm = document.getElementById("create-task-form");
