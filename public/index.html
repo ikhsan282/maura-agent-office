@@ -1515,15 +1515,74 @@ async function fetchStats() {
           </dl>
         </div>
         <div class="stats-section">
+          <h3>Sebaran Status</h3>
+          <div id="stats-chart"></div>
+        </div>
+        <div class="stats-section">
+          <h3>Workload per Agen</h3>
+          <div id="stats-workload"></div>
+        </div>
+        <div class="stats-section">
+          <h3>Timeline (24 jam)</h3>
+          <div id="stats-timeline" style="font-size:0.82rem;color:var(--text-dim)"></div>
+        </div>
+        <div class="stats-section">
           <h3>Agents</h3>
           <ul style="list-style:none;padding:0">
             ${data.agents.map(a => `<li style="padding:0.5rem 0;border-bottom:1px solid var(--border)">${a.emoji} ${a.name} — ${a.status}</li>`).join("")}
           </ul>
         </div>
       </div>`;
+    renderStatsCharts(data);
   } catch (error) {
     el.innerHTML = `<div class="alert alert-error">Gagal memuat: ${escapeHtml(String(error.message))}</div>`;
   }
+}
+
+const STATUS_COLORS = { running: "#10b981", ready: "#3b82f6", todo: "#8b5cf6", blocked: "#ef4444", done: "#06b6d4", review: "#f59e0b" };
+
+function bar(label, value, max, color) {
+  const pct = max ? Math.round(value / max * 100) : 0;
+  return `<div style="margin-bottom:0.5rem">
+    <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:0.2rem">
+      <span>${escapeHtml(label)}</span><b>${value}</b>
+    </div>
+    <div style="height:8px;background:var(--surface-hi);border-radius:4px;overflow:hidden">
+      <div style="height:100%;width:${pct}%;background:${color};border-radius:4px"></div>
+    </div>
+  </div>`;
+}
+
+function renderStatsCharts(data) {
+  const byStatus = {};
+  for (const t of data.tasks) byStatus[t.status] = (byStatus[t.status] || 0) + 1;
+  const maxStatus = Math.max(1, ...Object.values(byStatus));
+  document.getElementById("stats-chart").innerHTML =
+    Object.entries(byStatus).sort((a, b) => b[1] - a[1])
+      .map(([s, n]) => bar(s, n, maxStatus, STATUS_COLORS[s] || "#6b7280")).join("") || "<p style='color:var(--text-dim)'>Belum ada tugas</p>";
+
+  const byAgent = {};
+  for (const t of data.tasks.filter(t => t.status !== "done")) {
+    const ag = AGENTS.find(a => a.id === t.assignee);
+    const key = ag ? `${ag.emoji} ${ag.name}` : (t.assignee || "tanpa agen");
+    byAgent[key] = (byAgent[key] || 0) + 1;
+  }
+  const maxAgent = Math.max(1, ...Object.values(byAgent));
+  document.getElementById("stats-workload").innerHTML =
+    Object.entries(byAgent).sort((a, b) => b[1] - a[1])
+      .map(([k, n], i) => bar(k, n, maxAgent, ["#3b82f6", "#a3423f", "#eab308", "#10b981", "#8b5cf6"][i % 5])).join("") || "<p style='color:var(--text-dim)'>Semua agen kosong</p>";
+
+  const cutoff = data.now - 86400;
+  const recent = data.tasks.filter(t => (t.completed_at || t.started_at || 0) > cutoff)
+    .sort((a, b) => (b.completed_at || b.started_at || 0) - (a.completed_at || a.started_at || 0)).slice(0, 10);
+  document.getElementById("stats-timeline").innerHTML = recent.map(t => {
+    const ag = AGENTS.find(a => a.id === t.assignee);
+    const ts = t.completed_at || t.started_at;
+    return `<div style="padding:0.4rem 0;border-bottom:1px dashed var(--border)">
+      <span class="task-item-status ${t.status}" style="font-size:0.65rem">${t.status}</span>
+      ${ag ? ag.emoji : ""} <b>${escapeHtml(t.title.slice(0, 55))}</b> — ${timeAgo(ts)}
+    </div>`;
+  }).join("") || "<p style='color:var(--text-dim)'>Belum ada aktivitas 24 jam</p>";
 }
 
 let allTasks = [];
