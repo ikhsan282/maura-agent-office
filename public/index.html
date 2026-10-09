@@ -1086,8 +1086,6 @@ window.__moveAgent = moveAgent;
 function updateOffice(next) {
   state = next;
   document.getElementById("metric-working").textContent = next.metrics.working;
-  const workingAgents = next.agents.filter(a => a.status === "working" || a.chat);
-  document.getElementById("detail-working").textContent = workingAgents.map(a => `${a.emoji} ${a.name}: ${a.chat ? `chat — ${a.chat.prompt}` : a.task.title}`).join(" · ") || "Tidak ada";
   document.getElementById("metric-ready").textContent = next.metrics.ready;
   document.getElementById("metric-done").textContent = next.metrics.doneToday;
   document.getElementById("metric-system").textContent = `${next.metrics.memory}%`;
