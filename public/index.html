@@ -1287,7 +1287,7 @@ if (autoRefreshEnabled) {
 function updateOffice(next) {
   if (!next || !next.agents) return;
   state = next;
-  AGENTS = next.agents;  // Update global from API
+  // AGENTS already set by fetchState before this call
   
   document.getElementById("metric-working").textContent = next.metrics.working;
   document.getElementById("metric-ready").textContent = next.metrics.ready;
@@ -1336,7 +1336,9 @@ async function fetchState() {
   try {
     const response = await fetch(`${BASE}/api/state`, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    updateOffice(await response.json());
+    const data = await response.json();
+    AGENTS = data.agents;  // Populate BEFORE updateOffice
+    updateOffice(data);
   } catch (error) {
     window.__lastError = String(error?.stack || error);
     if (!state) showError("Data agen belum dapat dibaca. Pastikan server aktif.");
