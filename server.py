@@ -268,6 +268,7 @@ def main():
     parser.add_argument("--port", type=int, default=3001)
     args = parser.parse_args()
     mimetypes.add_type("text/javascript", ".js")
+    mimetypes.add_type("text/javascript", ".mjs")
     server = ThreadingHTTPServer((args.host, args.port), make_handler(collect_state, ROOT / "public"))
     print(f"Maura Agent Office listening on http://{args.host}:{args.port}", flush=True)
     server.serve_forever()
