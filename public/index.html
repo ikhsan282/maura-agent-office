@@ -862,6 +862,18 @@ footer {
   </div>
 </div>
 
+<div class="drawer" id="stats-drawer">
+  <div class="drawer-header">
+    <h2>📊 Stats & Logs</h2>
+    <button class="drawer-close" aria-label="Close">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div id="stats-content">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
 <div class="drawer" id="chat-drawer">
   <div class="drawer-header">
     <h2 id="chat-drawer-title">💬 Chat</h2>
@@ -894,6 +906,7 @@ footer {
   <button class="fab" id="fab-chat" title="Chat dengan agen">💬</button>
   <button class="fab" id="fab-create" title="Buat tugas baru">➕</button>
   <button class="fab" id="fab-tasks" title="Lihat semua tugas">📋</button>
+  <button class="fab" id="fab-stats" title="Stats & logs">📊</button>
 </div>
 
 <div class="loading" id="loading">
@@ -1364,7 +1377,8 @@ animate();
 const drawers = {
   tasks: document.getElementById("tasks-drawer"),
   create: document.getElementById("create-task-drawer"),
-  chat: document.getElementById("chat-drawer")
+  chat: document.getElementById("chat-drawer"),
+  stats: document.getElementById("stats-drawer")
 };
 
 function openDrawer(name) {
@@ -1398,7 +1412,47 @@ document.getElementById("fab-chat").addEventListener("click", () => {
   chatInput.focus();
 });
 
-// Fetch and render tasks
+document.getElementById("fab-stats").addEventListener("click", () => {
+  openDrawer("stats");
+  fetchStats();
+});
+
+async function fetchStats() {
+  const el = document.getElementById("stats-content");
+  el.innerHTML = '<div class="spinner"></div>';
+  try {
+    const response = await fetch("/api/state", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:1.5rem">
+        <div class="stats-section">
+          <h3>System</h3>
+          <dl class="task-details">
+            <dt>Load</dt><dd>${data.metrics.load}</dd>
+            <dt>Memory</dt><dd>${data.metrics.memory}%</dd>
+          </dl>
+        </div>
+        <div class="stats-section">
+          <h3>Tasks Today</h3>
+          <dl class="task-details">
+            <dt>Working</dt><dd>${data.metrics.working}</dd>
+            <dt>Ready</dt><dd>${data.metrics.ready}</dd>
+            <dt>Done</dt><dd>${data.metrics.doneToday}</dd>
+          </dl>
+        </div>
+        <div class="stats-section">
+          <h3>Agents</h3>
+          <ul style="list-style:none;padding:0">
+            ${data.agents.map(a => `<li style="padding:0.5rem 0;border-bottom:1px solid var(--border)">${a.emoji} ${a.name} — ${a.status}</li>`).join("")}
+          </ul>
+        </div>
+      </div>`;
+  } catch (error) {
+    el.innerHTML = `<div class="alert alert-error">Gagal memuat: ${escapeHtml(String(error.message))}</div>`;
+  }
+}
+
 let allTasks = [];
 async function fetchTasks() {
   const list = document.getElementById("tasks-list");
