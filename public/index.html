@@ -1105,7 +1105,7 @@ function buildStation(agent) {
   // Dynamic positioning by room
   const room = agent.room || "command";
   const roomX = room === "trans" ? -15 : room === "printing" ? 15 : 0;
-  const roomAgents = AGENTS.filter(a => (a.room || "command") === room);
+  const roomAgents = (AGENTS && AGENTS.length > 0) ? AGENTS.filter(a => (a.room || "command") === room) : [agent];
   const idx = roomAgents.indexOf(agent);
   const spread = roomAgents.length > 1 ? 7.5 : 0;
   const x = roomX + (idx - (roomAgents.length - 1) / 2) * spread;
