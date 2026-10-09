@@ -762,6 +762,11 @@ footer {
     <li><kbd>Left Click</kbd> + drag to pan</li>
     <li><kbd>Right Click</kbd> + drag to rotate</li>
     <li><kbd>Scroll</kbd> to zoom</li>
+    <li><kbd>0</kbd> Reset camera</li>
+    <li><kbd>1</kbd> Close-up view</li>
+    <li><kbd>2</kbd> Medium view</li>
+    <li><kbd>3</kbd> Wide view</li>
+    <li><kbd>R</kbd> Auto-rotate</li>
     <li><kbd>Arrow Keys</kbd> to navigate</li>
     <li><kbd>Click Agent</kbd> for details</li>
   </ul>
@@ -921,15 +926,26 @@ labels.domElement.style.cssText = "position:fixed;inset:0;pointer-events:none;z-
 container.appendChild(labels.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = !reducedMotion;
-controls.dampingFactor = 0.08;
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
 controls.target.set(0, 0, 0);
-controls.minDistance = 12;
-controls.maxDistance = 48;
-controls.maxPolarAngle = Math.PI * 0.48;
+controls.minDistance = 8;
+controls.maxDistance = 55;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.autoRotate = false;
+controls.autoRotateSpeed = 0.4;
 controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
 controls.keyPanSpeed = 18;
 controls.listenToKeyEvents(window);
+
+// Zoom presets: 1=close, 2=medium, 3=wide, 0=default
+addEventListener("keydown", e => {
+  if (e.key === "0") { camera.position.set(18, 17, 22); controls.target.set(0, 0, 0); }
+  if (e.key === "1") { camera.position.set(8, 8, 12); controls.target.set(0, 1, 0); }
+  if (e.key === "2") { camera.position.set(14, 13, 18); controls.target.set(0, 0, 0); }
+  if (e.key === "3") { camera.position.set(28, 24, 35); controls.target.set(0, 0, 0); }
+  if (e.key === "r") controls.autoRotate = !controls.autoRotate;
+});
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0xb8a896, 3.2));
 const sun = new THREE.DirectionalLight(0xfff9ed, 2.8);
@@ -1005,11 +1021,34 @@ box(scene, [3.8, 0.8, 0.35], 0x243b4c, [4.2, 0.75, 8.15]);
 box(scene, [0.9, 0.22, 1.65], 0xd7e3ea, [3.0, 0.57, 7.25]);
 textLabel("REST", 0x31536d, [4.2, 2.05, 7.9]);
 
+// Ping-pong table for idle agents
+const pingpongBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.12, 1.52), mat(0x1e3a5f));
+pingpongBase.position.set(-6, 0.75, -5.2);
+pingpongBase.castShadow = true;
+scene.add(pingpongBase);
+box(scene, [2.72, 0.03, 1.54], 0xffffff, [-6, 0.82, -5.2]);
+for (const lx of [-1.35, 1.35]) box(scene, [0.12, 0.75, 0.12], 0x334155, [-6 + lx, 0.38, -5.2 - 0.7]);
+for (const lx of [-1.35, 1.35]) box(scene, [0.12, 0.75, 0.12], 0x334155, [-6 + lx, 0.38, -5.2 + 0.7]);
+box(scene, [2.74, 0.15, 0.02], 0x1a1a1a, [-6, 0.88, -5.2]);
+textLabel("PING-PONG", 0x1e5795, [-6, 2.1, -5.2]);
+
+// Arcade cabinet for idle agents
+box(scene, [1.1, 1.85, 0.85], 0x1f2937, [6, 0.92, -5.5]);
+box(scene, [0.95, 1.15, 0.06], 0x111827, [6, 1.45, -5.1]);
+const arcadeScreen = box(scene, [0.82, 0.95, 0.03], 0x8b5cf6, [6, 1.45, -5.08]);
+arcadeScreen.material.emissive = new THREE.Color(0x8b5cf6).multiplyScalar(0.4);
+box(scene, [0.65, 0.08, 0.4], 0xef4444, [6, 0.55, -5.35]);
+box(scene, [0.18, 0.05, 0.18], 0xfbbf24, [5.75, 0.55, -5.25]);
+box(scene, [0.18, 0.05, 0.18], 0x3b82f6, [6.25, 0.55, -5.25]);
+textLabel("ARCADE", 0x8b5cf6, [6, 2.4, -5.5]);
+
 const activitySpots = {
   desk: [],
   meeting: [[-2.7, 1.25], [2.7, 1.25], [0, 4.0]],
   coffee: [[-5.2, 5.8], [-3.8, 5.8]],
   rest: [[3.1, 5.8], [4.8, 5.8]],
+  pingpong: [[-7.2, -5.2], [-4.8, -5.2]],
+  arcade: [[5.4, -5.5], [6.6, -5.5]],
   stroll: [[-1.5, -0.5], [1.5, -0.5], [0, 6.2]]
 };
 const activityName = { desk: "Bekerja di meja", meeting: "Diskusi di meeting", coffee: "Ngopi", rest: "Istirahat", stroll: "Berkeliling" };
@@ -1085,7 +1124,7 @@ function buildBlockyAvatar(shirt) {
 function pickTarget(view) {
   const status = view.agent.status;
   if (status === "working") return [view.home[0], view.home[1]];
-  const pool = status === "recent" ? activitySpots.coffee : [...activitySpots.stroll, ...activitySpots.rest, ...activitySpots.meeting];
+  const pool = status === "recent" ? activitySpots.coffee : [...activitySpots.stroll, ...activitySpots.rest, ...activitySpots.meeting, ...activitySpots.pingpong, ...activitySpots.arcade];
   const [wx, wz] = pool[Math.floor(Math.random() * pool.length)];
   return [wx, wz];
 }
