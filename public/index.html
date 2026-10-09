@@ -261,8 +261,52 @@ dialog::backdrop {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .status-dot { animation: none !important; }
+  .status-dot, .spinner { animation: none !important; }
   * { transition: none !important; }
+}
+
+.agent-label {
+  min-width: 132px;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 7px;
+  background: rgba(10,14,20,0.9);
+  color: var(--text);
+  text-align: center;
+  font: 600 12px/1.25 system-ui, sans-serif;
+  box-shadow: 0 5px 18px rgba(0,0,0,0.35);
+  pointer-events: none;
+  user-select: none;
+}
+
+.agent-label small {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.agent-label .label-status {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--status-idle);
+}
+
+.agent-label[data-status="working"] .label-status { background: var(--status-working); }
+.agent-label[data-status="recent"] .label-status { background: var(--status-recent); }
+
+.error button {
+  border: 0;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  background: var(--accent-trans);
+  color: white;
+  font: inherit;
+  cursor: pointer;
 }
 
 .task-details {
@@ -418,3 +462,251 @@ footer {
 }
 </script>
 <script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+const container = document.getElementById("scene-container");
+const loading = document.getElementById("loading");
+const dialog = document.getElementById("agent-dialog");
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const statusName = { working: "Sedang kerja", recent: "Baru selesai", idle: "Santai" };
+const statusColor = { working: 0x10b981, recent: 0x06b6d4, idle: 0x6b7280 };
+const agentObjects = new Map();
+let state = null;
+let activeFilter = "all";
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0e14);
+scene.fog = new THREE.Fog(0x0a0e14, 32, 60);
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(18, 17, 22);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "low-power" });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+const labels = new CSS2DRenderer();
+labels.setSize(innerWidth, innerHeight);
+labels.domElement.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:2";
+container.appendChild(labels.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = !reducedMotion;
+controls.dampingFactor = 0.08;
+controls.target.set(0, 0, 0);
+controls.minDistance = 12;
+controls.maxDistance = 48;
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+controls.keyPanSpeed = 18;
+controls.listenToKeyEvents(window);
+
+scene.add(new THREE.HemisphereLight(0xdce8ff, 0x302a24, 1.7));
+const sun = new THREE.DirectionalLight(0xfff1dc, 2.3);
+sun.position.set(12, 24, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24 });
+scene.add(sun);
+
+const floor = new THREE.Mesh(
+  new THREE.BoxGeometry(30, 0.5, 22),
+  new THREE.MeshLambertMaterial({ color: 0x20262f })
+);
+floor.position.y = -0.35;
+floor.receiveShadow = true;
+scene.add(floor);
+
+function mat(color, roughness = 0.8) {
+  return new THREE.MeshStandardMaterial({ color, roughness });
+}
+function box(parent, size, color, pos, name = "") {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), mat(color));
+  mesh.position.set(...pos);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.name = name;
+  parent.add(mesh);
+  return mesh;
+}
+function textLabel(text, color, pos) {
+  const el = document.createElement("div");
+  el.textContent = text;
+  el.style.cssText = `color:#fff;background:#${color.toString(16).padStart(6,"0")};padding:5px 10px;border-radius:5px;font:700 11px system-ui;letter-spacing:.08em`;
+  const obj = new CSS2DObject(el);
+  obj.position.set(...pos);
+  scene.add(obj);
+}
+
+// Three purposeful zones: command, transportation, and printing.
+box(scene, [0.16, 3.2, 19], 0x334155, [-14.1, 1.25, 0]);
+box(scene, [28, 3.2, 0.16], 0x334155, [0, 1.25, -10.1]);
+box(scene, [9.2, 0.06, 19.2], 0x102d4c, [-9.3, -0.06, 0]);
+box(scene, [9.2, 0.06, 19.2], 0x4a2020, [9.3, -0.06, 0]);
+box(scene, [8.8, 0.06, 7.2], 0x3b3219, [0, -0.02, -5.9]);
+textLabel("MAURA TRANS", 0x1e5795, [-9.2, 3.2, -9.8]);
+textLabel("COMMAND", 0x806615, [0, 3.2, -9.8]);
+textLabel("MAURA PRINTING", 0xa3423f, [9.2, 3.2, -9.8]);
+
+// Road markings and paper-print motifs distinguish the brand zones.
+for (let z = -7; z <= 7; z += 3.5) box(scene, [0.22, 0.03, 1.6], 0xf4c542, [-9.3, 0.02, z]);
+for (let z = -7; z <= 7; z += 3.5) box(scene, [2.4, 0.02, 1.5], z % 7 ? 0xf7efe4 : 0xd8c7ad, [9.3, 0.02, z]);
+
+const stationLayout = {
+  "default": [0, -5.8, 0xeab308],
+  "maura-trans-internal": [-9.5, -3, 0x3b82f6],
+  "maura-trans-cs": [-9.5, 4.5, 0x60a5fa],
+  "maura-printing-internal": [9.5, -3, 0xa3423f],
+  "maura-printing-cs": [9.5, 4.5, 0xcc6c68]
+};
+
+function buildStation(agent) {
+  const [x, z, accent] = stationLayout[agent.id] || [0, 5, 0x64748b];
+  const root = new THREE.Group();
+  root.position.set(x, 0, z);
+  root.userData.agentId = agent.id;
+  scene.add(root);
+
+  box(root, [4.6, 0.22, 2.2], 0x5b4636, [0, 1.25, 0], "desk");
+  box(root, [0.2, 1.25, 0.2], 0x2b211b, [-1.8, 0.6, -0.65]);
+  box(root, [0.2, 1.25, 0.2], 0x2b211b, [1.8, 0.6, -0.65]);
+  box(root, [2.25, 1.35, 0.12], 0x111827, [0, 2.15, -0.2]);
+  const screen = box(root, [1.9, 1.05, 0.04], accent, [0, 2.15, -0.12], "screen");
+  screen.material.emissive = new THREE.Color(accent).multiplyScalar(0.25);
+  box(root, [0.12, 0.65, 0.12], 0x475569, [0, 1.55, -0.25]);
+  box(root, [1.15, 0.1, 0.65], 0x1f2937, [0, 1.42, 0.55]);
+  box(root, [1.35, 0.16, 1.2], 0x334155, [0, 0.55, 1.7]);
+  box(root, [0.16, 1.15, 1.2], 0x334155, [0, 1.05, 2.2]);
+
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 0.8, 4, 8), mat(accent));
+  body.position.set(0, 1.5, 1.15);
+  body.castShadow = true;
+  body.userData.agentId = agent.id;
+  root.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.48, 16, 12), mat(0xf0be82));
+  head.position.set(0, 2.55, 1.15);
+  head.castShadow = true;
+  head.userData.agentId = agent.id;
+  root.add(head);
+
+  const label = document.createElement("div");
+  label.className = "agent-label";
+  label.innerHTML = `<span class="label-status"></span><b>${agent.emoji} ${agent.name}</b><small>${agent.role}</small>`;
+  const labelObj = new CSS2DObject(label);
+  labelObj.position.set(0, 3.65, 1.1);
+  root.add(labelObj);
+
+  root.traverse(o => { if (o.isMesh) o.userData.agentId = agent.id; });
+  agentObjects.set(agent.id, { root, body, head, screen, label, agent });
+}
+
+function updateOffice(next) {
+  state = next;
+  document.getElementById("metric-working").textContent = next.metrics.working;
+  document.getElementById("metric-ready").textContent = next.metrics.ready;
+  document.getElementById("metric-done").textContent = next.metrics.doneToday;
+  document.getElementById("metric-system").textContent = `${next.metrics.memory}%`;
+  document.getElementById("metric-system").title = `RAM ${next.metrics.memory}% · load ${next.metrics.load}`;
+
+  for (const agent of next.agents) {
+    if (!agentObjects.has(agent.id)) buildStation(agent);
+    const view = agentObjects.get(agent.id);
+    view.agent = agent;
+    view.label.dataset.status = agent.status;
+    view.label.querySelector("small").textContent = `${statusName[agent.status] || agent.status} · ${agent.role}`;
+    view.screen.material.color.setHex(statusColor[agent.status] || 0x6b7280);
+    view.screen.material.emissive.setHex(statusColor[agent.status] || 0x6b7280);
+    view.root.visible = activeFilter === "all" || agent.status === activeFilter;
+  }
+  loading.style.display = "none";
+}
+
+function showError(message) {
+  loading.innerHTML = `<div class="error-msg"><h2>Koneksi kantor terputus</h2><p>${message}</p><button id="retry">Coba lagi</button></div>`;
+  loading.style.display = "flex";
+  document.getElementById("retry").onclick = fetchState;
+}
+
+async function fetchState() {
+  try {
+    const response = await fetch("/api/state", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    updateOffice(await response.json());
+  } catch (error) {
+    if (!state) showError("Data agen belum dapat dibaca. Pastikan server aktif.");
+    console.error(error);
+  }
+}
+
+function openAgent(agentId) {
+  const view = agentObjects.get(agentId);
+  if (!view) return;
+  const a = view.agent;
+  document.getElementById("dialog-title").textContent = `${a.emoji} ${a.name}`;
+  document.getElementById("dialog-meta").innerHTML = `
+    <span class="meta-badge"><span class="status-dot ${a.status}"></span>${statusName[a.status]}</span>
+    <span class="meta-badge">${a.brand}</span><span class="meta-badge">${a.role}</span>`;
+  document.getElementById("dialog-task").innerHTML = a.task ? `
+    <h4>Tugas terkini</h4><dl class="task-details"><dt>Judul</dt><dd>${escapeHtml(a.task.title)}</dd>
+    <dt>Status</dt><dd>${escapeHtml(a.task.status)}</dd><dt>ID</dt><dd><code>${escapeHtml(a.task.id)}</code></dd></dl>` :
+    `<div class="task-details">Belum ada tugas aktif. Agen siap menerima pekerjaan.</div>`;
+  dialog.showModal();
+}
+function escapeHtml(value) {
+  const span = document.createElement("span");
+  span.textContent = String(value ?? "");
+  return span.innerHTML;
+}
+
+document.querySelector(".dialog-close").onclick = () => dialog.close();
+dialog.addEventListener("click", e => { if (e.target === dialog) dialog.close(); });
+document.querySelectorAll(".filter-btn").forEach(button => button.addEventListener("click", () => {
+  activeFilter = button.dataset.filter;
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.toggle("active", b === button));
+  for (const view of agentObjects.values()) view.root.visible = activeFilter === "all" || view.agent.status === activeFilter;
+}));
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+renderer.domElement.addEventListener("click", event => {
+  if (Math.abs(event.movementX) + Math.abs(event.movementY) > 3) return;
+  pointer.x = event.clientX / innerWidth * 2 - 1;
+  pointer.y = -(event.clientY / innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObjects(scene.children, true).find(i => i.object.userData.agentId);
+  if (hit) openAgent(hit.object.userData.agentId);
+});
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  labels.setSize(innerWidth, innerHeight);
+});
+addEventListener("contextmenu", e => e.preventDefault());
+
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  if (!reducedMotion) for (const view of agentObjects.values()) {
+    if (view.agent.status === "working") {
+      view.body.position.y = 1.5 + Math.sin(t * 3 + view.root.position.x) * 0.04;
+      view.screen.material.emissiveIntensity = 0.35 + Math.sin(t * 2) * 0.12;
+    } else view.screen.material.emissiveIntensity = 0.12;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  labels.render(scene, camera);
+}
+fetchState();
+setInterval(fetchState, 8000);
+animate();
+</script>
+</body>
+</html>
