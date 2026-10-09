@@ -20,13 +20,37 @@ DEFAULT_DBS = [
     Path.home() / ".hermes/kanban.db",
     Path.home() / ".hermes/kanban/boards/deskrpg-fe7b484593fa486999a823325d8d79d4/kanban.db",
 ]
-AGENTS = [
-    {"id": "default", "name": "Bos", "role": "Orchestrator", "brand": "Maura Group", "emoji": "👑", "desk": "command"},
-    {"id": "maura-trans-internal", "name": "Trans Internal", "role": "Operasional & SEO", "brand": "Maura Trans", "emoji": "🚐", "desk": "trans"},
-    {"id": "maura-trans-cs", "name": "Trans CS", "role": "Customer Service", "brand": "Maura Trans", "emoji": "💬", "desk": "trans-cs"},
-    {"id": "maura-printing-internal", "name": "Printing Internal", "role": "Produk & SEO", "brand": "Maura Printing", "emoji": "🖨️", "desk": "print"},
-    {"id": "maura-printing-cs", "name": "Printing CS", "role": "Customer Service", "brand": "Maura Printing", "emoji": "🎧", "desk": "print-cs"},
-]
+
+ROLE_MAP = {"ads": "Iklan", "cs": "Customer Service", "internal": "Internal Ops", "ops": "Operasional", "seo": "SEO", "social": "Social Media"}
+EMOJI_MAP = {"ads": "📢", "cs": "💬", "internal": "⚙️", "ops": "📦", "seo": "🔍", "social": "📱"}
+
+
+def discover_agents() -> list[dict]:
+    """Auto-detect Hermes profiles and generate agent list."""
+    agents = [{"id": "default", "name": "Bos Maura", "role": "Orchestrator", "brand": "Maura Group", "emoji": "👑", "room": "command"}]
+    try:
+        profiles_dir = Path.home() / ".hermes/profiles"
+        if profiles_dir.exists():
+            for entry in profiles_dir.iterdir():
+                if not entry.is_dir() or entry.name.startswith("."):
+                    continue
+                pid = entry.name
+                if pid.startswith("maura-trans-"):
+                    suffix = pid.replace("maura-trans-", "")
+                    agents.append({"id": pid, "name": f"Trans {ROLE_MAP.get(suffix, suffix.title())}", 
+                                   "role": ROLE_MAP.get(suffix, suffix), "brand": "Maura Trans", 
+                                   "emoji": EMOJI_MAP.get(suffix, "🚐"), "room": "trans"})
+                elif pid.startswith("maura-printing-"):
+                    suffix = pid.replace("maura-printing-", "")
+                    agents.append({"id": pid, "name": f"Printing {ROLE_MAP.get(suffix, suffix.title())}", 
+                                   "role": ROLE_MAP.get(suffix, suffix), "brand": "Maura Printing", 
+                                   "emoji": EMOJI_MAP.get(suffix, "🖨️"), "room": "printing"})
+    except (OSError, FileNotFoundError):
+        pass
+    return agents
+
+
+AGENTS = discover_agents()
 
 
 def _task_rows(db_path: Path) -> list[dict]:
@@ -57,6 +81,7 @@ CHATS_LOCK = threading.Lock()
 
 def collect_state(db_paths: list[Path] | None = None, now: float | None = None) -> dict:
     now = now or time.time()
+    current_agents = discover_agents()  # Refresh on every call
     tasks: dict[str, dict] = {}
     for db in db_paths or DEFAULT_DBS:
         for task in _task_rows(Path(db)):
@@ -71,7 +96,7 @@ def collect_state(db_paths: list[Path] | None = None, now: float | None = None) 
         by_agent.setdefault(task.get("assignee") or "", []).append(task)
 
     agents = []
-    for definition in AGENTS:
+    for definition in current_agents:
         assigned = by_agent.get(definition["id"], [])
         running = sorted(
             (t for t in assigned if t.get("status") in {"running", "review"}),
@@ -130,7 +155,7 @@ def create_task(payload: dict) -> dict:
     title = str(payload.get("title", "")).strip()
     body = str(payload.get("body", "")).strip()
     assignee = str(payload.get("assignee", "")).strip()
-    allowed = {a["id"] for a in AGENTS}
+    allowed = {a["id"] for a in discover_agents()}
     if not title or len(title) > 160:
         raise ValueError("Judul wajib diisi, maksimal 160 karakter")
     if assignee not in allowed:
@@ -157,7 +182,7 @@ def clean_reply(raw: str) -> str:
 def chat_agent(payload: dict) -> dict:
     message = str(payload.get("message", "")).strip()
     profile = str(payload.get("agent", "")).strip()
-    allowed = {a["id"] for a in AGENTS}
+    allowed = {a["id"] for a in discover_agents()}
     if profile not in allowed:
         raise ValueError("Agen tidak valid")
     if not message or len(message) > 4_000:
