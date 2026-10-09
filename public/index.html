@@ -742,6 +742,7 @@ footer {
 <body>
 
 <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌓</button>
+<button class="theme-toggle" id="auto-refresh-toggle" title="Auto refresh" style="bottom:5rem">🔄</button>
 
 <div id="container"></div>
 
@@ -820,10 +821,18 @@ footer {
       </select>
     </div>
     <div class="form-group">
+      <label for="task-search">Cari Tugas</label>
+      <input type="text" id="task-search" placeholder="Judul / deskripsi...">
+    </div>
+    <div class="form-group">
       <label for="task-assignee-filter">Filter Agen</label>
       <select id="task-assignee-filter">
         <option value="">Semua Agen</option>
       </select>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+      <button class="btn" id="export-csv" type="button" style="flex:1;font-size:0.8rem;padding:0.4rem">⬇ CSV</button>
+      <button class="btn" id="export-json" type="button" style="flex:1;font-size:0.8rem;padding:0.4rem">⬇ JSON</button>
     </div>
     <div id="tasks-list">
       <div class="spinner"></div>
@@ -1210,6 +1219,70 @@ themeToggle.addEventListener("click", () => {
   updateSceneTheme();
 });
 
+// Auto-refresh & notifications
+let autoRefreshEnabled = localStorage.getItem("autoRefresh") === "true";
+let autoRefreshInterval = null;
+let lastTaskStates = new Map();
+const beepSound = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7/AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w==");
+
+function updateAutoRefreshButton() {
+  const btn = document.getElementById("auto-refresh-toggle");
+  btn.style.opacity = autoRefreshEnabled ? "1" : "0.5";
+  btn.title = autoRefreshEnabled ? "Auto refresh ON (click to disable)" : "Auto refresh OFF (click to enable)";
+}
+
+async function checkTaskChanges(newState) {
+  if (!autoRefreshEnabled || Notification.permission !== "granted") return;
+  for (const task of newState.tasks || []) {
+    const prev = lastTaskStates.get(task.id);
+    if (!prev) {
+      lastTaskStates.set(task.id, task.status);
+      continue;
+    }
+    if (prev !== task.status && (task.status === "done" || task.status === "blocked")) {
+      const agent = AGENTS.find(a => a.id === task.assignee);
+      const title = task.status === "done" ? "✅ Task Selesai" : "🚫 Task Blocked";
+      const body = `${agent ? agent.emoji + " " + agent.name : task.assignee}: ${task.title.slice(0, 60)}`;
+      new Notification(title, { body, icon: "/favicon.ico", silent: false });
+      beepSound.play().catch(() => {});
+    }
+    lastTaskStates.set(task.id, task.status);
+  }
+}
+
+async function autoRefresh() {
+  try {
+    const res = await fetch("/api/state", { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    updateOffice(data);
+    checkTaskChanges(data);
+  } catch (e) {}
+}
+
+document.getElementById("auto-refresh-toggle").addEventListener("click", async () => {
+  autoRefreshEnabled = !autoRefreshEnabled;
+  localStorage.setItem("autoRefresh", autoRefreshEnabled);
+  updateAutoRefreshButton();
+  if (autoRefreshEnabled) {
+    if (Notification.permission === "default") {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") {
+        alert("Notifications diblokir. Enable di browser settings untuk notifikasi task.");
+      }
+    }
+    autoRefreshInterval = setInterval(autoRefresh, 8000);
+    autoRefresh();
+  } else {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  }
+});
+
+updateAutoRefreshButton();
+if (autoRefreshEnabled) {
+  autoRefreshInterval = setInterval(autoRefresh, 8000);
+}
+
 function updateOffice(next) {
   state = next;
   document.getElementById("metric-working").textContent = next.metrics.working;
@@ -1474,13 +1547,44 @@ async function fetchTasks() {
   }
 }
 
-function renderTasks() {
+function filteredTasks() {
   const statusFilter = document.getElementById("task-status-filter").value;
   const assigneeFilter = document.getElementById("task-assignee-filter").value;
-  const list = document.getElementById("tasks-list");
+  const q = document.getElementById("task-search").value.trim().toLowerCase();
   let tasks = allTasks;
   if (statusFilter) tasks = tasks.filter(t => t.status === statusFilter);
   if (assigneeFilter) tasks = tasks.filter(t => t.assignee === assigneeFilter);
+  if (q) tasks = tasks.filter(t =>
+    (t.title || "").toLowerCase().includes(q) ||
+    (t.body || "").toLowerCase().includes(q) ||
+    (t.result || "").toLowerCase().includes(q));
+  return tasks;
+}
+
+function downloadFile(name, content, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("export-csv").addEventListener("click", () => {
+  const esc = v => `"${String(v ?? "").replaceAll('"', '""')}"`;
+  const rows = filteredTasks().map(t =>
+    [t.id, t.title, t.assignee, t.status, t.priority, t.created_at, t.completed_at].map(esc).join(","));
+  downloadFile("maura-tasks.csv",
+    ["id,title,assignee,status,priority,created_at,completed_at", ...rows].join("\n"), "text/csv");
+});
+
+document.getElementById("export-json").addEventListener("click", () => {
+  downloadFile("maura-tasks.json", JSON.stringify(filteredTasks(), null, 2), "application/json");
+});
+
+function renderTasks() {
+  const tasks = filteredTasks();
+  const list = document.getElementById("tasks-list");
   if (!tasks.length) {
     list.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:2rem">Tidak ada tugas</p>';
     return;
@@ -1539,6 +1643,17 @@ function timeAgo(unix) {
 
 document.getElementById("task-status-filter").addEventListener("change", renderTasks);
 document.getElementById("task-assignee-filter").addEventListener("change", renderTasks);
+document.getElementById("task-search").addEventListener("input", renderTasks);
+
+// Keyboard shortcuts: ESC close drawer, / focus task search
+addEventListener("keydown", event => {
+  if (event.key === "Escape") closeAllDrawers();
+  if (event.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) {
+    event.preventDefault();
+    openDrawer("tasks");
+    document.getElementById("task-search").focus();
+  }
+});
 
 // Create task
 const createTaskForm = document.getElementById("create-task-form");
