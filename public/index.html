@@ -473,10 +473,14 @@ const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const statusName = { working: "Sedang kerja", recent: "Baru selesai", idle: "Santai" };
 const statusColor = { working: 0x10b981, recent: 0x06b6d4, idle: 0x6b7280 };
 const agentObjects = new Map();
+window.__agentObjects = agentObjects;
 let state = null;
 let activeFilter = "all";
+let dragging = false;
+let downAt = null;
 
 const scene = new THREE.Scene();
+window.__scene = scene;
 scene.background = new THREE.Color(0x0a0e14);
 scene.fog = new THREE.Fog(0x0a0e14, 32, 60);
 const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 100);
@@ -598,11 +602,11 @@ function buildStation(agent) {
   label.className = "agent-label";
   label.innerHTML = `<span class="label-status"></span><b>${agent.emoji} ${agent.name}</b><small>${agent.role}</small>`;
   const labelObj = new CSS2DObject(label);
-  labelObj.position.set(0, 3.65, 1.1);
-  root.add(labelObj);
+  labelObj.position.set(x, 3.65, z + 1.1);
+  scene.add(labelObj);
 
   root.traverse(o => { if (o.isMesh) o.userData.agentId = agent.id; });
-  agentObjects.set(agent.id, { root, body, head, screen, label, agent });
+  agentObjects.set(agent.id, { root, body, head, screen, label, labelObj, agent });
 }
 
 function updateOffice(next) {
@@ -623,6 +627,8 @@ function updateOffice(next) {
     view.screen.material.emissive.setHex(statusColor[agent.status] || 0x6b7280);
     view.root.visible = activeFilter === "all" || agent.status === activeFilter;
   }
+  renderer.render(scene, camera);
+  labels.render(scene, camera);
   loading.style.display = "none";
 }
 
@@ -638,6 +644,7 @@ async function fetchState() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     updateOffice(await response.json());
   } catch (error) {
+    window.__lastError = String(error?.stack || error);
     if (!state) showError("Data agen belum dapat dibaca. Pastikan server aktif.");
     console.error(error);
   }
@@ -673,8 +680,16 @@ document.querySelectorAll(".filter-btn").forEach(button => button.addEventListen
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
+renderer.domElement.addEventListener("pointerdown", event => {
+  downAt = [event.clientX, event.clientY];
+  dragging = false;
+});
+renderer.domElement.addEventListener("pointermove", event => {
+  if (downAt && Math.hypot(event.clientX - downAt[0], event.clientY - downAt[1]) > 5) dragging = true;
+});
 renderer.domElement.addEventListener("click", event => {
-  if (Math.abs(event.movementX) + Math.abs(event.movementY) > 3) return;
+  if (dragging) return;
+  downAt = null;
   pointer.x = event.clientX / innerWidth * 2 - 1;
   pointer.y = -(event.clientY / innerHeight) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
@@ -692,17 +707,23 @@ addEventListener("contextmenu", e => e.preventDefault());
 
 const clock = new THREE.Clock();
 function animate() {
+  window.__frames = (window.__frames || 0) + 1;
   requestAnimationFrame(animate);
-  const t = clock.getElapsedTime();
-  if (!reducedMotion) for (const view of agentObjects.values()) {
-    if (view.agent.status === "working") {
-      view.body.position.y = 1.5 + Math.sin(t * 3 + view.root.position.x) * 0.04;
-      view.screen.material.emissiveIntensity = 0.35 + Math.sin(t * 2) * 0.12;
-    } else view.screen.material.emissiveIntensity = 0.12;
+  try {
+    const t = clock.getElapsedTime();
+    if (!reducedMotion) for (const view of agentObjects.values()) {
+      if (view.agent.status === "working") {
+        view.body.position.y = 1.5 + Math.sin(t * 3 + view.root.position.x) * 0.04;
+        view.screen.material.emissiveIntensity = 0.35 + Math.sin(t * 2) * 0.12;
+      } else view.screen.material.emissiveIntensity = 0.12;
+    }
+    controls.update();
+    renderer.render(scene, camera);
+    labels.render(scene, camera);
+  } catch (error) {
+    window.__renderError = String(error?.stack || error);
+    console.error(error);
   }
-  controls.update();
-  renderer.render(scene, camera);
-  labels.render(scene, camera);
 }
 fetchState();
 setInterval(fetchState, 8000);
