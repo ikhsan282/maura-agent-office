@@ -819,6 +819,12 @@ footer {
         <option value="done">Done</option>
       </select>
     </div>
+    <div class="form-group">
+      <label for="task-assignee-filter">Filter Agen</label>
+      <select id="task-assignee-filter">
+        <option value="">Semua Agen</option>
+      </select>
+    </div>
     <div id="tasks-list">
       <div class="spinner"></div>
     </div>
@@ -910,7 +916,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 
-const container = document.getElementById("scene-container");
+const container = document.getElementById("container");
 const loading = document.getElementById("loading");
 const dialog = document.getElementById("agent-dialog");
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1172,6 +1178,24 @@ function moveAgent(view, time) {
   view.labelObj.position.set(view.home[0] + view.offset[0], 3.65, view.home[1] + view.offset[1] + 1.1);
 }
 window.__moveAgent = moveAgent;
+
+// Theme switcher
+const themeToggle = document.getElementById("theme-toggle");
+const savedTheme = localStorage.getItem("theme") || "dark";
+if (savedTheme === "light") document.documentElement.dataset.theme = "light";
+
+function updateSceneTheme() {
+  const isLight = document.documentElement.dataset.theme === "light";
+  scene.background.setHex(isLight ? 0xf5f5f0 : 0x0a0e14);
+  scene.fog.color.setHex(isLight ? 0xe8e8e0 : 0x0a0e14);
+}
+
+themeToggle.addEventListener("click", () => {
+  const isLight = document.documentElement.dataset.theme === "light";
+  document.documentElement.dataset.theme = isLight ? "" : "light";
+  localStorage.setItem("theme", isLight ? "dark" : "light");
+  updateSceneTheme();
+});
 
 function updateOffice(next) {
   state = next;
