@@ -1054,7 +1054,7 @@ function buildStation(agent) {
   scene.add(labelObj);
 
   root.traverse(o => { if (o.isMesh) o.userData.agentId = agent.id; });
-  agentObjects.set(agent.id, { root, actor, avatar, screen, label, labelObj, agent, home: [x, z], offset: [0, 0], from: [0, 0], to: [0, 0], moveStart: 0, moveDur: 0, nextMove: 0, lastStatus: null, walking: false });
+  agentObjects.set(agent.id, { root, actor, avatar, screen, label, labelObj, agent, home: [x, z], offset: [0, 0], from: [0, 0], to: [0, 0], moveStart: 0, moveDur: 0, nextMove: 0, lastStatus: null, walking: false, sitting: false });
 }
 
 // Minecraft-style blocky avatar: every part is a cube, limbs pivot at joints so they can swing.
@@ -1102,12 +1102,15 @@ function moveAgent(view, time) {
     view.lastStatus = status;
   }
   const k = view.moveDur ? Math.min(1, (time - view.moveStart) / view.moveDur) : 1;
-  const e = k * k * (3 - 2 * k); // smoothstep glide
+  const e = k * k * (3 - 2 * k);
   const dx = view.to[0] - view.from[0], dz = view.to[1] - view.from[1];
   view.offset = [view.from[0] + dx * e, view.from[1] + dz * e];
-  view.actor.position.set(view.offset[0], 0, view.offset[1]);
+  const atDesk = Math.hypot(view.offset[0], view.offset[1]) < 0.2;
+  view.sitting = status === "working" && atDesk;
+  view.actor.position.set(view.offset[0], view.sitting ? -0.6 : 0, view.offset[1] + (view.sitting ? 0.5 : 0));
   view.walking = k < 1 && Math.hypot(dx, dz) > 0.01;
   if (view.walking) view.actor.rotation.y = Math.atan2(dx, dz);
+  else if (view.sitting) view.actor.rotation.y = 0;
   view.labelObj.position.set(view.home[0] + view.offset[0], 3.65, view.home[1] + view.offset[1] + 1.1);
 }
 window.__moveAgent = moveAgent;
@@ -1232,11 +1235,33 @@ function animate() {
     const t = clock.getElapsedTime();
     if (!reducedMotion) for (const view of agentObjects.values()) {
       moveAgent(view, t);
-      const swing = view.walking ? Math.sin(t * 6) * 0.4 : 0;
-      view.avatar.armL.rotation.x = swing;
-      view.avatar.armR.rotation.x = -swing;
-      view.avatar.legL.rotation.x = -swing * 0.7;
-      view.avatar.legR.rotation.x = swing * 0.7;
+      if (view.sitting) {
+        view.avatar.torso.rotation.x = 0.15;
+        view.avatar.head.rotation.x = -0.1;
+        view.avatar.legL.rotation.x = 1.4;
+        view.avatar.legR.rotation.x = 1.4;
+        const type = Math.sin(t * 3.5) * 0.12;
+        view.avatar.armL.rotation.x = -0.3 + type;
+        view.avatar.armR.rotation.x = -0.3 - type;
+        view.avatar.group.position.y = Math.sin(t * 1.2) * 0.015;
+      } else if (view.walking) {
+        const swing = Math.sin(t * 6) * 0.4;
+        view.avatar.torso.rotation.x = 0;
+        view.avatar.head.rotation.x = 0;
+        view.avatar.armL.rotation.x = swing;
+        view.avatar.armR.rotation.x = -swing;
+        view.avatar.legL.rotation.x = -swing * 0.7;
+        view.avatar.legR.rotation.x = swing * 0.7;
+        view.avatar.group.position.y = 0;
+      } else {
+        view.avatar.torso.rotation.x = 0;
+        view.avatar.head.rotation.x = 0;
+        view.avatar.armL.rotation.x = 0;
+        view.avatar.armR.rotation.x = 0;
+        view.avatar.legL.rotation.x = 0;
+        view.avatar.legR.rotation.x = 0;
+        view.avatar.group.position.y = Math.sin(t * 1.5) * 0.02;
+      }
       if (view.agent.status === "working") {
         view.screen.material.emissiveIntensity = 0.35 + Math.sin(t * 2) * 0.12;
       } else view.screen.material.emissiveIntensity = 0.12;
