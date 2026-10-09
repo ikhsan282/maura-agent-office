@@ -897,6 +897,37 @@ textLabel("MAURA PRINTING", 0xa3423f, [9.2, 3.2, -9.8]);
 for (let z = -7; z <= 7; z += 3.5) box(scene, [0.22, 0.03, 1.6], 0xf4c542, [-9.3, 0.02, z]);
 for (let z = -7; z <= 7; z += 3.5) box(scene, [2.4, 0.02, 1.5], z % 7 ? 0xf7efe4 : 0xd8c7ad, [9.3, 0.02, z]);
 
+// Shared activity zones make agent state visible, not just textual.
+const meetingTable = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.18, 24), mat(0x6b4f38));
+meetingTable.position.set(0, 1.05, 2.6);
+meetingTable.castShadow = true;
+scene.add(meetingTable);
+box(scene, [0.35, 1.1, 0.35], 0x31251d, [0, 0.5, 2.6]);
+for (const [x, z] of [[-2.7, 2.6], [2.7, 2.6], [0, 5.3]]) {
+  box(scene, [1.05, 0.16, 1.05], 0x475569, [x, 0.55, z]);
+  box(scene, [1.05, 1.05, 0.14], 0x475569, [x, 1.05, z + (z > 3 ? 0.48 : 0)]);
+}
+textLabel("MEETING", 0x475569, [0, 3.0, 2.6]);
+
+// Coffee counter and rest bed/sofa.
+box(scene, [3.2, 1.15, 0.75], 0x4b3427, [-4.5, 0.55, 7.7]);
+box(scene, [0.32, 0.48, 0.32], 0xd1d5db, [-4.9, 1.38, 7.65]);
+box(scene, [0.5, 0.1, 0.5], 0x111827, [-4.9, 1.62, 7.65]);
+textLabel("COFFEE", 0x7c4a2d, [-4.5, 2.35, 7.7]);
+box(scene, [3.8, 0.45, 2.1], 0x31536d, [4.2, 0.25, 7.3]);
+box(scene, [3.8, 0.8, 0.35], 0x243b4c, [4.2, 0.75, 8.15]);
+box(scene, [0.9, 0.22, 1.65], 0xd7e3ea, [3.0, 0.57, 7.25]);
+textLabel("REST", 0x31536d, [4.2, 2.05, 7.9]);
+
+const activitySpots = {
+  desk: [],
+  meeting: [[-2.7, 1.25], [2.7, 1.25], [0, 4.0]],
+  coffee: [[-5.2, 5.8], [-3.8, 5.8]],
+  rest: [[3.1, 5.8], [4.8, 5.8]],
+  stroll: [[-1.5, -0.5], [1.5, -0.5], [0, 6.2]]
+};
+const activityName = { desk: "Bekerja di meja", meeting: "Diskusi di meeting", coffee: "Ngopi", rest: "Istirahat", stroll: "Berkeliling" };
+
 const stationLayout = {
   "default": [0, -5.8, 0xeab308],
   "maura-trans-internal": [-9.5, -3, 0x3b82f6],
@@ -923,16 +954,19 @@ function buildStation(agent) {
   box(root, [1.35, 0.16, 1.2], 0x334155, [0, 0.55, 1.7]);
   box(root, [0.16, 1.15, 1.2], 0x334155, [0, 1.05, 2.2]);
 
+  const actor = new THREE.Group();
+  actor.userData.agentId = agent.id;
+  root.add(actor);
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 0.8, 4, 8), mat(accent));
   body.position.set(0, 1.5, 1.15);
   body.castShadow = true;
   body.userData.agentId = agent.id;
-  root.add(body);
+  actor.add(body);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.48, 16, 12), mat(0xf0be82));
   head.position.set(0, 2.55, 1.15);
   head.castShadow = true;
   head.userData.agentId = agent.id;
-  root.add(head);
+  actor.add(head);
 
   const label = document.createElement("div");
   label.className = "agent-label";
@@ -942,8 +976,38 @@ function buildStation(agent) {
   scene.add(labelObj);
 
   root.traverse(o => { if (o.isMesh) o.userData.agentId = agent.id; });
-  agentObjects.set(agent.id, { root, body, head, screen, label, labelObj, agent });
+  agentObjects.set(agent.id, { root, actor, body, head, screen, label, labelObj, agent, home: [x, z], offset: [0, 0], from: [0, 0], to: [0, 0], moveStart: 0, moveDur: 0, nextMove: 0, lastStatus: null });
 }
+
+// Desk stays put; only the actor walks. Targets are world coordinates converted to offsets from the desk.
+function pickTarget(view) {
+  const status = view.agent.status;
+  if (status === "working") return [view.home[0], view.home[1]];
+  const pool = status === "recent" ? activitySpots.coffee : [...activitySpots.stroll, ...activitySpots.rest, ...activitySpots.meeting];
+  const [wx, wz] = pool[Math.floor(Math.random() * pool.length)];
+  return [wx, wz];
+}
+
+function moveAgent(view, time) {
+  const status = view.agent.status;
+  if (status !== view.lastStatus || time > view.nextMove) {
+    const [wx, wz] = pickTarget(view);
+    view.from = [...view.offset];
+    view.to = [wx - view.home[0], wz - view.home[1]];
+    view.moveStart = time;
+    view.moveDur = reducedMotion ? 0 : 3 + Math.random() * 2;
+    view.nextMove = status === "working" ? Infinity : time + 12 + Math.random() * 10;
+    view.lastStatus = status;
+  }
+  const k = view.moveDur ? Math.min(1, (time - view.moveStart) / view.moveDur) : 1;
+  const e = k * k * (3 - 2 * k); // smoothstep glide
+  const dx = view.to[0] - view.from[0], dz = view.to[1] - view.from[1];
+  view.offset = [view.from[0] + dx * e, view.from[1] + dz * e];
+  view.actor.position.set(view.offset[0], 0, view.offset[1]);
+  if (k < 1 && Math.hypot(dx, dz) > 0.01) view.actor.rotation.y = Math.atan2(dx, dz);
+  view.labelObj.position.set(view.home[0] + view.offset[0], 3.65, view.home[1] + view.offset[1] + 1.1);
+}
+window.__moveAgent = moveAgent;
 
 function updateOffice(next) {
   state = next;
@@ -1048,6 +1112,7 @@ function animate() {
   try {
     const t = clock.getElapsedTime();
     if (!reducedMotion) for (const view of agentObjects.values()) {
+      moveAgent(view, t);
       if (view.agent.status === "working") {
         view.body.position.y = 1.5 + Math.sin(t * 3 + view.root.position.x) * 0.04;
         view.screen.material.emissiveIntensity = 0.35 + Math.sin(t * 2) * 0.12;
