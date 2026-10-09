@@ -134,6 +134,15 @@ def create_task(payload: dict) -> dict:
     return result
 
 
+NOISE_PREFIXES = ("Warning:", "session_id:", "Session ")
+
+
+def clean_reply(raw: str) -> str:
+    # hermes -Q still prints warnings and a session footer to stdout; keep only the answer.
+    lines = [ln for ln in raw.splitlines() if not ln.startswith(NOISE_PREFIXES)]
+    return "\n".join(lines).strip()
+
+
 def chat_agent(payload: dict) -> dict:
     message = str(payload.get("message", "")).strip()
     profile = str(payload.get("agent", "")).strip()
@@ -148,7 +157,10 @@ def chat_agent(payload: dict) -> dict:
     proc = subprocess.run(command, input=message, text=True, capture_output=True, timeout=300, cwd=ROOT)
     if proc.returncode:
         raise RuntimeError((proc.stderr or proc.stdout or "Chat gagal").strip())
-    return {"ok": True, "reply": proc.stdout.strip()}
+    reply = clean_reply(proc.stdout)
+    if not reply:
+        raise RuntimeError("Agen tidak mengirim balasan")
+    return {"ok": True, "reply": reply}
 
 
 def make_handler(state_provider, static_dir: Path, task_creator=create_task, agent_chatter=chat_agent):

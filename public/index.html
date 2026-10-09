@@ -643,6 +643,24 @@ footer {
   align-self: flex-start;
 }
 
+.chat-hint {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin: -0.25rem 0 0.75rem;
+}
+
+.chat-typing {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-style: italic;
+  padding: 0.25rem 0;
+}
+
+.task-item-status.done { background: rgba(16,185,129,.16); color: #6ee7b7; }
+.task-item-status.ready, .task-item-status.todo { background: rgba(59,130,246,.16); color: #93c5fd; }
+.task-item-status.running, .task-item-status.review { background: rgba(245,158,11,.16); color: #fcd34d; }
+.task-item-status.blocked { background: rgba(239,68,68,.16); color: #fca5a5; }
+
 .chat-input-group {
   display: flex;
   gap: 0.5rem;
@@ -714,8 +732,21 @@ footer {
     <h2>📋 Semua Tugas</h2>
     <button class="drawer-close" aria-label="Close">&times;</button>
   </div>
-  <div class="drawer-body" id="tasks-list">
-    <div class="spinner"></div>
+  <div class="drawer-body">
+    <div class="form-group">
+      <label for="task-status-filter">Filter Status</label>
+      <select id="task-status-filter">
+        <option value="">Semua</option>
+        <option value="running">Running</option>
+        <option value="ready">Ready</option>
+        <option value="todo">Todo</option>
+        <option value="blocked">Blocked</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <div id="tasks-list">
+      <div class="spinner"></div>
+    </div>
   </div>
 </div>
 
@@ -758,14 +789,16 @@ footer {
   <div class="drawer-body">
     <div id="chat-alert"></div>
     <div class="form-group">
-      <label for="chat-agent-select">Agen</label>
+      <label for="chat-agent-select">Chat dengan agen</label>
       <select id="chat-agent-select">
+        <option value="default">👑 Bos</option>
         <option value="maura-trans-internal">🚐 Trans Internal</option>
         <option value="maura-printing-internal">🖨️ Printing Internal</option>
         <option value="maura-trans-cs">💬 Trans CS</option>
         <option value="maura-printing-cs">🎧 Printing CS</option>
       </select>
     </div>
+    <div class="chat-hint">Riwayat chat dipisahkan untuk setiap agen.</div>
     <div class="chat-messages" id="chat-messages"></div>
     <form id="chat-form">
       <div class="chat-input-group">
@@ -1184,11 +1217,13 @@ document.getElementById("fab-create").addEventListener("click", () => {
 
 document.getElementById("fab-chat").addEventListener("click", () => {
   openDrawer("chat");
-  document.getElementById("chat-messages").innerHTML = "";
   document.getElementById("chat-alert").innerHTML = "";
+  renderChatHistory();
+  chatInput.focus();
 });
 
 // Fetch and render tasks
+let allTasks = [];
 async function fetchTasks() {
   const list = document.getElementById("tasks-list");
   list.innerHTML = '<div class="spinner"></div>';
@@ -1196,29 +1231,59 @@ async function fetchTasks() {
     const response = await fetch("/api/tasks", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    const tasks = data.tasks || [];
-    if (!tasks.length) {
-      list.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:2rem">Belum ada tugas</p>';
-      return;
-    }
-    list.innerHTML = tasks.map(t => {
-      const agent = AGENTS.find(a => a.id === (t.assignee || ""));
-      const agentName = agent ? `${agent.emoji} ${agent.name}` : t.assignee || "—";
-      return `<div class="task-item">
-        <div class="task-item-header">
-          <div class="task-item-title">${escapeHtml(t.title)}</div>
-          <div class="task-item-status ${t.status}">${t.status}</div>
-        </div>
-        <div class="task-item-meta">
-          <span>👤 ${escapeHtml(agentName)}</span>
-          <span>🆔 ${escapeHtml(t.id)}</span>
-        </div>
-      </div>`;
-    }).join("");
+    allTasks = data.tasks || [];
+    renderTasks();
   } catch (error) {
     list.innerHTML = `<div class="alert alert-error">Gagal memuat: ${escapeHtml(String(error.message))}</div>`;
   }
 }
+
+function renderTasks() {
+  const filter = document.getElementById("task-status-filter").value;
+  const list = document.getElementById("tasks-list");
+  const tasks = filter ? allTasks.filter(t => t.status === filter) : allTasks;
+  if (!tasks.length) {
+    list.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:2rem">Tidak ada tugas</p>';
+    return;
+  }
+  list.innerHTML = tasks.map(t => {
+    const agent = AGENTS.find(a => a.id === (t.assignee || ""));
+    const agentName = agent ? `${agent.emoji} ${agent.name}` : t.assignee || "—";
+    const ts = t.completed_at || t.started_at || t.created_at || 0;
+    const age = ts ? timeAgo(ts) : "";
+    return `<div class="task-item" data-task-id="${escapeHtml(t.id)}">
+      <div class="task-item-header">
+        <div class="task-item-title">${escapeHtml(t.title)}</div>
+        <div class="task-item-status ${t.status}">${t.status}</div>
+      </div>
+      <div class="task-item-meta">
+        <span>${escapeHtml(agentName)}</span>
+        ${age ? `<span>${age}</span>` : ""}
+      </div>
+      <div class="task-body-preview" id="body-${t.id}" style="display:none;margin-top:0.5rem;font-size:0.875rem;color:var(--text-dim);white-space:pre-wrap">${escapeHtml(t.body || "Tidak ada detail")}</div>
+    </div>`;
+  }).join("");
+}
+
+function toggleTaskBody(id) {
+  const el = document.getElementById(`body-${id}`);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+document.getElementById("tasks-list").addEventListener("click", event => {
+  const item = event.target.closest(".task-item");
+  if (item) toggleTaskBody(item.dataset.taskId);
+});
+
+function timeAgo(unix) {
+  const sec = Math.floor(Date.now() / 1000 - unix);
+  if (sec < 60) return `${sec}d lalu`;
+  if (sec < 3600) return `${Math.floor(sec / 60)}m lalu`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}j lalu`;
+  return `${Math.floor(sec / 86400)}h lalu`;
+}
+
+document.getElementById("task-status-filter").addEventListener("change", renderTasks);
 
 // Create task
 const createTaskForm = document.getElementById("create-task-form");
@@ -1230,7 +1295,8 @@ createTaskForm.addEventListener("submit", async (event) => {
   const title = document.getElementById("task-title").value.trim();
   const body = document.getElementById("task-body").value.trim();
   const assignee = document.getElementById("task-assignee").value;
-  if (!title || !assignee) return;
+  if (!title) return showAlert(createTaskAlert, "Judul tugas wajib diisi", "error");
+  if (!assignee) return showAlert(createTaskAlert, "Pilih agen dulu", "error");
   createTaskBtn.disabled = true;
   createTaskBtn.textContent = "Membuat...";
   createTaskAlert.innerHTML = "";
@@ -1242,19 +1308,23 @@ createTaskForm.addEventListener("submit", async (event) => {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "Gagal membuat tugas");
-    createTaskAlert.innerHTML = '<div class="alert alert-success">✅ Tugas berhasil dibuat</div>';
+    const agent = AGENTS.find(a => a.id === assignee);
+    showAlert(createTaskAlert, `Tugas dibuat untuk ${agent.name}`, "success");
     createTaskForm.reset();
-    setTimeout(() => {
-      closeAllDrawers();
-      fetchState();
-    }, 1500);
+    fetchState();
+    setTimeout(() => { closeAllDrawers(); fetchTasks(); }, 1200);
   } catch (error) {
-    createTaskAlert.innerHTML = `<div class="alert alert-error">${escapeHtml(String(error.message))}</div>`;
+    showAlert(createTaskAlert, error.message, "error");
   } finally {
     createTaskBtn.disabled = false;
     createTaskBtn.textContent = "Buat Tugas";
   }
 });
+
+function showAlert(el, text, kind) {
+  el.innerHTML = `<div class="alert alert-${kind}">${escapeHtml(text)}</div>`;
+}
+
 
 // Chat
 const chatForm = document.getElementById("chat-form");
@@ -1263,18 +1333,50 @@ const chatSendBtn = document.getElementById("chat-send-btn");
 const chatMessages = document.getElementById("chat-messages");
 const chatAlert = document.getElementById("chat-alert");
 const chatAgentSelect = document.getElementById("chat-agent-select");
+const chatHistory = {};
+let chatBusy = false;
+
+function renderChatHistory() {
+  const agent = chatAgentSelect.value;
+  const messages = chatHistory[agent] || [];
+  chatMessages.innerHTML = messages.map(m =>
+    `<div class="chat-message ${m.role}">${escapeHtml(m.text)}</div>`
+  ).join("");
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+chatAgentSelect.addEventListener("change", () => {
+  chatAlert.innerHTML = "";
+  renderChatHistory();
+});
+
+chatInput.addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    if (!chatBusy) chatForm.requestSubmit();
+  }
+});
 
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (chatBusy) return;
   const message = chatInput.value.trim();
   const agent = chatAgentSelect.value;
   if (!message) return;
-  chatSendBtn.disabled = true;
-  chatSendBtn.textContent = "...";
-  chatAlert.innerHTML = "";
-  chatMessages.innerHTML += `<div class="chat-message user">${escapeHtml(message)}</div>`;
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  chatHistory[agent] ||= [];
+  chatHistory[agent].push({ role: "user", text: message });
   chatInput.value = "";
+  renderChatHistory();
+  const typing = document.createElement("div");
+  typing.className = "chat-typing";
+  typing.textContent = "Agen sedang mengetik…";
+  chatMessages.appendChild(typing);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  chatBusy = true;
+  chatSendBtn.disabled = true;
+  chatSendBtn.textContent = "Menunggu…";
+  chatAgentSelect.disabled = true;
+  chatAlert.innerHTML = "";
   try {
     const response = await fetch("/api/chat", {
       method: "POST",
@@ -1283,13 +1385,17 @@ chatForm.addEventListener("submit", async (event) => {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "Chat gagal");
-    chatMessages.innerHTML += `<div class="chat-message agent">${escapeHtml(result.reply || "Tidak ada balasan")}</div>`;
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    chatHistory[agent].push({ role: "agent", text: result.reply || "Tidak ada balasan" });
   } catch (error) {
-    chatAlert.innerHTML = `<div class="alert alert-error">${escapeHtml(String(error.message))}</div>`;
+    chatHistory[agent].pop();
+    showAlert(chatAlert, error.message, "error");
   } finally {
+    chatBusy = false;
     chatSendBtn.disabled = false;
     chatSendBtn.textContent = "Kirim";
+    chatAgentSelect.disabled = false;
+    renderChatHistory();
+    chatInput.focus();
   }
 });
 
