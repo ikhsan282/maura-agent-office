@@ -40,7 +40,7 @@ def _task_rows(db_path: Path) -> list[dict]:
         if not needed <= columns:
             con.close()
             return []
-        optional = [c for c in ("priority", "created_at", "started_at", "completed_at") if c in columns]
+        optional = [c for c in ("priority", "created_at", "started_at", "completed_at", "body", "result") if c in columns]
         selected = ["id", "title", "assignee", "status", *optional]
         rows = [dict(r) for r in con.execute(f"SELECT {','.join(selected)} FROM tasks")]
         con.close()

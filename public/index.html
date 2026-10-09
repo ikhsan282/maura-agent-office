@@ -331,6 +331,35 @@ dialog::backdrop {
   cursor: pointer;
 }
 
+.task-body-preview {
+  display: none;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.detail-block h5 {
+  margin: 0 0 0.5rem;
+  color: var(--text);
+  font: 600 11px/1 system-ui, sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.detail-block + .detail-block { margin-top: 0.85rem; }
+
+.detail-text {
+  max-height: 260px;
+  overflow-y: auto;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.task-item[data-open="true"] .task-body-preview { display: block; }
+
 .task-details {
   background: var(--surface-hi);
   padding: 1rem;
@@ -1291,6 +1320,18 @@ function renderTasks() {
     const agentName = agent ? `${agent.emoji} ${agent.name}` : t.assignee || "—";
     const ts = t.completed_at || t.started_at || t.created_at || 0;
     const age = ts ? timeAgo(ts) : "";
+    const rows = [
+      t.body ? `<div class="detail-block"><h5>Deskripsi</h5><div class="detail-text">${escapeHtml(t.body)}</div></div>` : "",
+      t.result ? `<div class="detail-block"><h5>Hasil</h5><div class="detail-text">${escapeHtml(t.result)}</div></div>` : "",
+      `<div class="detail-block"><h5>Info</h5><dl class="task-details">
+        <dt>Status</dt><dd><span class="task-item-status ${t.status}">${escapeHtml(t.status)}</span></dd>
+        <dt>PIC</dt><dd>${escapeHtml(agentName)}</dd>
+        <dt>Prioritas</dt><dd>${t.priority ?? 0}</dd>
+        ${t.id ? `<dt>ID</dt><dd><code>${escapeHtml(t.id)}</code></dd>` : ""}
+        ${t.started_at ? `<dt>Dikerjakan</dt><dd>${timeAgo(t.started_at)}</dd>` : ""}
+        ${t.completed_at ? `<dt>Selesai</dt><dd>${timeAgo(t.completed_at)}</dd>` : ""}
+      </dl></div>`
+    ].join("");
     return `<div class="task-item" data-task-id="${escapeHtml(t.id)}">
       <div class="task-item-header">
         <div class="task-item-title">${escapeHtml(t.title)}</div>
@@ -1300,14 +1341,17 @@ function renderTasks() {
         <span>${escapeHtml(agentName)}</span>
         ${age ? `<span>${age}</span>` : ""}
       </div>
-      <div class="task-body-preview" id="body-${t.id}" style="display:none;margin-top:0.5rem;font-size:0.875rem;color:var(--text-dim);white-space:pre-wrap">${escapeHtml(t.body || "Tidak ada detail")}</div>
+      <div class="task-body-preview" id="body-${escapeHtml(t.id)}" style="display:none">${rows}</div>
     </div>`;
   }).join("");
 }
 
 function toggleTaskBody(id) {
-  const el = document.getElementById(`body-${id}`);
-  el.style.display = el.style.display === "none" ? "block" : "none";
+  const items = document.querySelectorAll(".task-item");
+  const item = items.length ? [...items].find(i => i.dataset.taskId === id) : null;
+  const willOpen = item ? item.dataset.open !== "true" : false;
+  items.forEach(i => { i.dataset.open = "false"; });
+  if (item) item.dataset.open = String(willOpen);
 }
 
 document.getElementById("tasks-list").addEventListener("click", event => {
