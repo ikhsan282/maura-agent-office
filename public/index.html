@@ -1392,12 +1392,20 @@ function buildOfficeArchitecture() {
   cylinder(scene, [0.3, 0.3], 0.12, 0x2e8b72, [-16, 0.3, 4], [Math.PI / 2, 0, 0], "KOPI KELILING");
   box(scene, [1.7, 0.1, 0.5], 0x3d7fd6, [-16, 0.9, 4], "KOPI MOTORCYCLE");
   for (const x of [-12, 3, 13]) { cylinder(scene, [0.06, 0.06], 3.2, 0x2f3336, [x, 1.6, 11]); box(scene, [0.5, 0.12, 0.2], 0xffd98a, [x, 3.2, 11], "STREET LAMP"); }
-  for (const x of [-9, 4]) { box(scene, [1.0, 0.3, 0.3], 0xf6f7f5, [x, 2.5, -9.5], "AC INDOOR"); box(scene, [0.9, 0.6, 0.3], 0xe9ebe8, [x, 0.4, -10.3], "AC OUTDOOR"); }
+  // Lightweight motion: street-lamp moth flicker and slowly rotating AC fans.
+  const fans = [];
+  for (const x of [-9, 4]) {
+    box(scene, [1.0, 0.3, 0.3], 0xf6f7f5, [x, 2.5, -9.5], "AC INDOOR");
+    const outdoor = box(scene, [0.9, 0.6, 0.3], 0xe9ebe8, [x, 0.4, -10.3], "AC OUTDOOR");
+    const fan = cylinder(scene, [0.24, 0.24], 0.03, 0x5f686f, [x, 0.4, -10.48], [Math.PI / 2, 0, 0], "AC FAN"); fans.push(fan);
+  }
+  animatedProps.push({ tick: t => fans.forEach((fan, i) => { fan.rotation.z = t * (i + 1) * 3; }) });
   for (let i = 0; i < 5; i++) { box(scene, [1.3, 0.06, 0.14], 0xd9dde0, [-8 + i * 4, 3.0, 0], "SUSPENDED LED"); }
   // Night-only fixtures use one pooled point light to keep the scene cheap.
   for (const p of [[-12, 3.2, 11], [3, 3.2, 11], [13, 3.2, 11], [4.6, 3.0, -1.2]]) {
     const light = new THREE.PointLight(0xffc978, 0, 7, 2); light.position.set(...p); nightLights.push(light); scene.add(light);
   }
+  updateSceneTheme();
   return { floor1, floor2 };
 }
 const officeArchitecture = buildOfficeArchitecture();
@@ -1793,8 +1801,15 @@ if (savedTheme === "light") document.documentElement.dataset.theme = "light";
 
 function updateSceneTheme() {
   const isLight = document.documentElement.dataset.theme === "light";
-  scene.background.setHex(isLight ? 0xf5f5f0 : 0x0a0e14);
-  scene.fog.color.setHex(isLight ? 0xe8e8e0 : 0x0a0e14);
+  // Dark UI represents night; warm pools are enabled while the moon replaces the sun.
+  scene.background.setHex(isLight ? 0xcadfee : 0x07101f);
+  scene.fog.color.setHex(isLight ? 0xcadfee : 0x07101f);
+  hemi.intensity = isLight ? 1.8 : 0.35;
+  ambient.intensity = isLight ? 0.45 : 0.18;
+  sun.color.setHex(isLight ? 0xfff1ce : 0x91a9ff);
+  sun.intensity = isLight ? 2.4 : 0.45;
+  sun.position.set(isLight ? 12 : -8, isLight ? 24 : 16, isLight ? 10 : -12);
+  nightLights.forEach(light => { light.intensity = isLight ? 0 : 2.1; });
 }
 
 themeToggle.addEventListener("click", () => {
@@ -1892,6 +1907,13 @@ function renderMissionPanel(next) {
 
 function updateOffice(next) {
   state = next;
+  const agents = next.agents || [];
+  next.metrics ||= {};
+  next.metrics.working ??= agents.filter(agent => agent.status === "working").length;
+  next.metrics.ready ??= agents.filter(agent => agent.status === "idle").length;
+  next.metrics.doneToday ??= 0;
+  next.metrics.memory ??= 0;
+  next.metrics.load ??= "–";
   document.getElementById("metric-working").textContent = next.metrics.working;
   document.getElementById("metric-ready").textContent = next.metrics.ready;
   document.getElementById("metric-done").textContent = next.metrics.doneToday;
@@ -2077,6 +2099,7 @@ function animate() {
   try {
     updateCameraAnimation(performance.now());
     const t = clock.getElapsedTime();
+    animatedProps.forEach(prop => prop.tick(t));
     if (!reducedMotion) for (const view of agentObjects.values()) {
       moveAgent(view, t);
       if (view.sitting) {
