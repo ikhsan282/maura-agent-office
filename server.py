@@ -208,6 +208,11 @@ def chat_agent(payload: dict) -> dict:
 
 def make_handler(state_provider, static_dir: Path, task_creator=create_task, agent_chatter=chat_agent):
     class Handler(SimpleHTTPRequestHandler):
+        @staticmethod
+        def normalized_static_path(raw_path: str) -> str:
+            path = urlparse(raw_path).path.removeprefix("/office") or "/"
+            return "/index.html" if path == "/" else path
+
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(static_dir), **kwargs)
 
@@ -231,7 +236,10 @@ def make_handler(state_provider, static_dir: Path, task_creator=create_task, age
                         payload = {"tasks": payload.get("tasks", [])}
                 self._json(200, payload)
                 return
-            if path == "/":
+            normalized = self.normalized_static_path(self.path)
+            if normalized != urlparse(self.path).path:
+                self.path = normalized
+            elif normalized == "/index.html":
                 self.path = "/index.html"
             return super().do_GET()
 

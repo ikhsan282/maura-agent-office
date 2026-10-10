@@ -41,6 +41,11 @@ class StateTests(unittest.TestCase):
         handler = make_handler(lambda: {"ok": True}, Path("."))
         self.assertTrue(callable(handler))
 
+    def test_office_static_module_path_strips_reverse_proxy_prefix(self):
+        handler = make_handler(lambda: {"ok": True}, Path("."))
+        self.assertEqual(handler.normalized_static_path("/office/idle-wandering.mjs"), "/idle-wandering.mjs")
+        self.assertEqual(handler.normalized_static_path("/office/"), "/index.html")
+
 
 if __name__ == "__main__":
     unittest.main()
