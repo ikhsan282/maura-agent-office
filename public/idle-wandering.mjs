@@ -11,8 +11,6 @@ export const ACTIVITY_LABELS = {
   arcade: "🎮 Main game",
   meeting: "👥 Diskusi di meeting",
   bedroom: "🛏️ Istirahat di bedroom",
-  lesehan: "🧺 Duduk di lesehan",
-  balcony: "🌤️ Menepi di balkon",
   stroll: "🚶 Jalan-jalan"
 };
 
@@ -27,8 +25,6 @@ export const ACTIVITY_SPOTS = {
   arcade: [[7.4, -5.5], [8.6, -5.5]],
   meeting: [[2.2, 7.0], [-2.2, 7.0], [0, 10.5], [1.5, 9.5], [-1.5, 9.5]],
   bedroom: [[-9.5, 7], [-9.5, 9], [-10.5, 5], [-10.5, 9]],
-  lesehan: [[1.0, -2.0], [5.5, -2.0]],
-  balcony: [[-2.0, 9.5], [4.0, 9.5]],
   stroll: [[-1.5, -0.5], [1.5, -0.5], [0, 2.5]]
 };
 
@@ -58,10 +54,10 @@ export function routeFor(activity, from, target) {
   const [x, z] = target;
   // Long trips swing through the central aisle at z=4.5 (between desk rows and the counter row).
   if (activity === "coffee" || activity === "meeting") return [from, [0, 4.5], [x, 4.5], target];
-  // Bedroom and balcony are reached via the west corridor at x=-12.7.
-  if (activity === "bedroom" || activity === "balcony") return [from, [0, 4.5], [-12.7, 4.5], target];
+  // Bedroom is reached via the west corridor at x=-12.7.
+  if (activity === "bedroom") return [from, [0, 4.5], [-12.7, 4.5], target];
   // Flag, bakso and game-room spots hug the outer lanes (x=-13 / x=-5.5).
   if (activity === "flag" || activity === "bakso" || activity === "pingpong" || activity === "arcade") return [from, [x, 4.5], target];
-  // Short hops (lounge, water, lesehan, bookshelf, stroll) go straight in.
+  // Short hops (lounge, water, bookshelf, stroll) go straight in.
   return [from, target];
 }

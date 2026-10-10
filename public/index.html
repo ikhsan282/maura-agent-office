@@ -972,17 +972,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 <div class="room-views">
   <h3>Ruangan</h3>
   <button class="room-btn" data-room="overview">🏢 Overview</button>
-  <button class="room-btn" data-room="floor1">1️⃣ Lantai 1</button>
   <button class="room-btn" data-room="trans">🚐 Trans</button>
   <button class="room-btn" data-room="printing">🖨️ Printing</button>
   <button class="room-btn" data-room="lounge">🛋️ Lounge</button>
   <button class="room-btn" data-room="game">🎮 Game</button>
   <button class="room-btn" data-room="pantry">☕ Pantry</button>
-  <button class="room-btn" data-room="floor2">2️⃣ Lantai 2</button>
   <button class="room-btn" data-room="bedroom">🛏️ Bedroom</button>
-  <button class="room-btn" data-room="lesehan">🧺 Lesehan</button>
-  <button class="room-btn" data-room="bathroom">🚿 Bathroom</button>
-  <button class="room-btn" data-room="balcony">🌿 Balcony</button>
 </div>
 
 <div class="controls-help">
@@ -1324,15 +1319,11 @@ function textLabel(text, color, pos) {
   scene.add(obj);
 }
 
-// Two-storey Ruang-inspired architecture: ground-floor hot desks and shared spaces;
-// upper-floor dorm, lesehan, bathroom and balcony. All props stay primitive/procedural.
+// Single-storey open-roof office: workspace and shared facilities remain fully visible.
 function buildOfficeArchitecture() {
   const floor1 = new THREE.Group(); floor1.name = "FLOOR 1"; scene.add(floor1);
-  const floor2 = new THREE.Group(); floor2.name = "FLOOR 2"; scene.add(floor2);
-  const wood = woodTexture(), tile = tileTexture();
+  const wood = woodTexture();
   texturedPlane(floor1, [28, 20], wood, [0, 0, 0]);
-  texturedPlane(floor2, [28, 20], wood, [0, 3.6, 0]);
-  box(floor2, [28, 0.22, 20], 0x8b8173, [0, 3.35, 0], "UPPER FLOOR SLAB");
   // Ground floor brand wings, shell, glass lounge partition, game room and pantry.
   box(floor1, [9.0, 0.08, 18.8], 0x173a58, [-9.3, 0.04, 0], "MAURA TRANS WORKSPACE");
   box(floor1, [9.0, 0.08, 18.8], 0x542b2b, [9.3, 0.04, 0], "MAURA PRINTING WORKSPACE");
@@ -1360,29 +1351,11 @@ function buildOfficeArchitecture() {
   box(floor1, [3.2, 0.12, 1.8], 0x1b5b87, [-7, 0.75, -5], "GAME ROOM PINGPONG");
   box(floor1, [1.2, 2.0, 0.8], 0x19243b, [8.5, 1.0, -5], "GAME ROOM ARCADE");
   cylinder(floor1, [0.5, 0.5], 0.08, 0x6e442e, [10.8, 0.65, -5], [0, 0, 0], "MEJA KARAMBOL");
-  // Upper floor rooms: four beds, lesehan, bathroom, balcony and stairwell.
-  for (let i = 0; i < 4; i++) {
-    const x = -10 + (i % 2) * 3.0, z = -5.8 + Math.floor(i / 2) * 3.6;
-    box(floor2, [2.0, 0.3, 2.7], 0x6f4932, [x, 4.0, z], "BED");
-    box(floor2, [1.7, 0.12, 2.3], [0x4d83b8, 0xd66c5b, 0x4fa58c, 0xe3b45c][i], [x, 4.23, z + 0.1]);
-  }
-  box(floor2, [4.0, 0.08, 3.0], 0x92485a, [3.5, 3.72, -3.8], "LESEHAN");
-  box(floor2, [3.0, 1.5, 2.6], 0x6eafd0, [9.5, 4.35, -5.8], "BATHROOM");
-  box(floor2, [10.0, 0.1, 2.5], 0xc6b69d, [1.0, 3.55, 10.7], "BALCONY");
-  box(floor2, [3.2, 0.15, 1.0], 0x8a5c3d, [-1.0, 4.2, 5.6], "BALCONY SEAT");
-  for (let i = 0; i < 10; i++) cylinder(floor2, [0.03, 0.03], 3.6, 0x6c6257, [-12.5 + i * 2.7, 1.8, 9.6], [0, 0, 0], "STAIRS");
-  textLabel("FLOOR 1", 0xe3b45c, [0, 3.4, -9.4]);
-  textLabel("FLOOR 2", 0xe3b45c, [0, 6.3, -9.4]);
   textLabel("MAURA TRANS", 0x63b8c6, [-9.3, 3.0, -8.8]);
   textLabel("MAURA PRINTING", 0xd58b78, [9.3, 3.0, -8.8]);
   textLabel("LOUNGE", 0x63b8c6, [4.6, 3.0, -1.2]);
   textLabel("GAME ROOM", 0x9333ea, [8.5, 3.0, -5]);
   textLabel("PANTRY", 0x8b6b4a, [9, 2.8, 2.2]);
-  textLabel("BEDROOM · 4 BEDS", 0x7c8fc4, [-8, 6.4, -2]);
-  textLabel("LESEHAN", 0xd66c5b, [3.5, 6.1, -3.8]);
-  textLabel("BATHROOM", 0x6eafd0, [9.5, 6.2, -5.8]);
-  textLabel("BALCONY", 0xc6b69d, [1, 6.2, 10.7]);
-  textLabel("STAIRS", 0x8b8173, [0, 2.8, 9.6]);
   // Indonesian street scene: flag, bakso cart, kopi keliling motorcycle, street lamps.
   cylinder(scene, [0.2, 0.2], 5.0, 0xbfc6c8, [-16, 2.5, 2]);
   box(scene, [1.6, 0.7, 0.04], 0xce1126, [-15.2, 4.5, 2], "BENDERA MERAH PUTIH");
@@ -1407,7 +1380,7 @@ function buildOfficeArchitecture() {
     const light = new THREE.PointLight(0xffc978, 0, 7, 2); light.position.set(...p); nightLights.push(light); scene.add(light);
   }
   updateSceneTheme();
-  return { floor1, floor2 };
+  return { floor1 };
 }
 const officeArchitecture = buildOfficeArchitecture();
 box(scene, [28, 3.2, 0.16], 0x334155, [0, 1.25, -10.1]);
@@ -2013,17 +1986,12 @@ document.querySelectorAll(".filter-btn").forEach(button => button.addEventListen
 // Room camera positions - adjusted untuk view lebih luas
 const roomViews = {
   overview: { pos: [22, 20, 28], target: [0, 0, 0] },
-  floor1: { pos: [22, 20, 28], target: [0, 0, 0] },
   trans: { pos: [-9.3, 14, 16], target: [-9.3, 0, 0] },
   printing: { pos: [9.3, 14, 16], target: [9.3, 0, 0] },
   lounge: { pos: [0, 12, 14], target: [0, 1, 7] },
   game: { pos: [8, 8, -2], target: [8, 1.5, -5.5] },
   pantry: { pos: [-6, 9, 14], target: [-6, 1, 7] },
-  floor2: { pos: [20, 18, 30], target: [0, 4, 7] },
-  bedroom: { pos: [-8, 9, 14], target: [-8, 0.5, 7] },
-  lesehan: { pos: [0, 10, 16], target: [0, 1, 8] },
-  bathroom: { pos: [7, 9, 14], target: [7, 1, 8] },
-  balcony: { pos: [0, 10, 20], target: [0, 2, 11] }
+  bedroom: { pos: [-8, 9, 14], target: [-8, 0.5, 7] }
 };
 
 let cameraAnimating = false;
